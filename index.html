@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bot Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161920;
+    --surface2: #1e2230;
+    --border: #2a2f42;
+    --accent: #4ade80;
+    --accent-dim: rgba(74,222,128,0.12);
+    --danger: #f87171;
+    --danger-dim: rgba(248,113,113,0.12);
+    --warn: #fbbf24;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  /* ── grid bg ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(74,222,128,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,222,128,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ══════════════ LOGIN ══════════════ */
+  #login-screen {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 420px;
+    padding: 24px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .login-logo span {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--accent);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+  }
+
+  .login-logo h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    margin-top: 4px;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-card::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(74,222,128,0.15), transparent 70%);
+    pointer-events: none;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(74,222,128,0.1);
+  }
+
+  .btn-login {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    background: var(--accent);
+    color: #0d1f0f;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .btn-login:hover { opacity: 0.9; }
+  .btn-login:active { transform: scale(0.98); }
+
+  .err {
+    margin-top: 12px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--danger);
+    text-align: center;
+    min-height: 16px;
+  }
+
+  /* ══════════════ PANEL ══════════════ */
+  #panel {
+    display: none;
+    width: 100%;
+    max-width: 860px;
+    min-height: 100vh;
+    padding: 28px 24px;
+    position: relative;
+    z-index: 10;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .top-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 10px;
+    border-radius: 99px;
+  }
+
+  .pill-online {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(74,222,128,0.3);
+  }
+
+  .pill-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: blink 1.4s infinite;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity:1; }
+    50%      { opacity:0.3; }
+  }
+
+  .btn-logout {
+    font-size: 12px;
+    font-family: var(--mono);
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 9px 16px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .tab.active {
+    background: var(--surface2);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeUp 0.25s ease both; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+
+  .card-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── Textarea / code ── */
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text);
+    resize: vertical;
+    outline: none;
+    line-height: 1.7;
+    transition: border-color 0.2s;
+    min-height: 130px;
+  }
+
+  textarea:focus { border-color: rgba(74,222,128,0.4); }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 8px 20px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.18s;
+    border: 1px solid transparent;
+  }
+
+  .btn-save {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .btn-save:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-start {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: rgba(74,222,128,0.35);
+  }
+
+  .btn-start:hover { background: rgba(74,222,128,0.2); }
+
+  .btn-stop {
+    background: var(--danger-dim);
+    color: var(--danger);
+    border-color: rgba(248,113,113,0.35);
+  }
+
+  .btn-stop:hover { background: rgba(248,113,113,0.2); }
+
+  .toast {
+    display: inline-block;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--accent);
+    margin-left: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .toast.show { opacity: 1; }
+
+  /* ── Metrics ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .metric {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .metric-lbl {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  .metric-val {
+    font-size: 26px;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: var(--text);
+  }
+
+  .metric-val.green { color: var(--accent); }
+  .metric-val.red   { color: var(--danger); }
+
+  /* ── URL row ── */
+  .url-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .url-row input {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .url-row input:focus { border-color: rgba(74,222,128,0.4); }
+
+  .interval-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .interval-row label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+  }
+
+  .interval-row input[type=number] {
+    width: 72px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+  }
+
+  /* ── Log ── */
+  .log-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.8;
+    min-height: 180px;
+    max-height: 260px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .log-line { color: var(--muted); }
+  .log-ok   { color: var(--accent); }
+  .log-err  { color: var(--danger); }
+  .log-warn { color: var(--warn); }
+
+  /* ── Status pill ── */
+  .status-stopped { background: var(--danger-dim); color: var(--danger); border-color: rgba(248,113,113,0.3); }
+  .status-running { background: var(--accent-dim); color: var(--accent); border-color: rgba(74,222,128,0.3); }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-logo">
+    <span>system access</span>
+    <h1>Bot Admin Panel</h1>
+  </div>
+  <div class="login-card">
+    <div class="field">
+      <label>Login</label>
+      <input type="text" id="username" placeholder="admin" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label>Parol</label>
+      <input type="password" id="password" placeholder="••••••••" />
+    </div>
+    <button class="btn-login" onclick="doLogin()">Kirish →</button>
+    <p class="err" id="err-msg"></p>
+  </div>
+</div>
+
+<!-- ══ PANEL ══ -->
+<div id="panel">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="top-title">Bot Admin Panel</span>
+      <span class="pill pill-online">
+        <span class="pill-dot"></span>online
+      </span>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">Chiqish</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('data')">📋 Ma'lumotlar</button>
+    <button class="tab" onclick="switchTab('code')">💻 Bot kodi</button>
+    <button class="tab" onclick="switchTab('polling')">📡 Polling</button>
+  </div>
+
+  <!-- TAB: Ma'lumotlar -->
+  <div id="tab-data" class="tab-content active">
+    <div class="card">
+      <div class="card-label">Bot ma'lumotlari (JSON / matn)</div>
+      <textarea id="bot-data" rows="7" placeholder='{"token": "BOT_TOKEN", "chatId": "123456", "message": "Salom!"}'></textarea>
+      <div style="margin-top:12px; display:flex; align-items:center;">
+        <button class="btn btn-save" onclick="saveField('bot-data','toast-data')">Saqlash</button>
+        <span class="toast" id="toast-data">✓ Saqlandi</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Qo'shimcha konfiguratsiya</div>
+      <textarea id="bot-config" rows="5" placeholder='{"webhook": "", "apiBase": "https://api.telegram.org", "debug": false}'></textarea>
+      <div style="margin-top:12px; display:flex; align-items:center;">
+        <button class="btn btn-save" onclick="saveField('bot-config','toast-config')">Saqlash</button>
+        <span class="toast" id="toast-config">✓ Saqlandi</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Bot kodi -->
+  <div id="tab-code" class="tab-content">
+    <div class="card">
+      <div class="card-label">Bot kodi (JavaScript / Python)</div>
+      <textarea id="bot-code" rows="14" placeholder="// Bot kodingizni shu yerga kiriting...
+// Misol:
+// const bot = new TelegramBot(token, { polling: true });
+// bot.on('message', (msg) => {
+//   bot.sendMessage(msg.chat.id, 'Salom!');
+// });"></textarea>
+      <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-save" onclick="saveField('bot-code','toast-code')">Saqlash</button>
+        <button class="btn btn-save" onclick="exportCode()">⬇ Yuklab olish</button>
+        <span class="toast" id="toast-code">✓ Saqlandi</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Polling -->
+  <div id="tab-polling" class="tab-content">
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-lbl">Jami so'rovlar</div>
+        <div class="metric-val" id="m-total">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-lbl">Muvaffaqiyatli</div>
+        <div class="metric-val green" id="m-ok">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-lbl">Xatoliklar</div>
+        <div class="metric-val red" id="m-err">0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Polling sozlamalari</div>
+
+      <div style="margin-bottom:10px;">
+        <div class="card-label" style="margin-bottom:6px;">So'rov URL manzili</div>
+        <div class="url-row">
+          <input type="text" id="poll-url" value="https://api.telegram.org/bot" placeholder="https://api.telegram.org/bot{TOKEN}/getUpdates" />
+        </div>
+      </div>
+
+      <div class="interval-row">
+        <label>Interval (soniya):</label>
+        <input type="number" id="poll-interval" value="5" min="1" max="600" />
+        <label>Method:</label>
+        <select id="poll-method" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;">
+          <option>GET</option>
+          <option>POST</option>
+        </select>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-start" id="btn-start" onclick="startPolling()">▶ Boshlash</button>
+        <button class="btn btn-stop" id="btn-stop" onclick="stopPolling()" style="display:none;">■ To'xtatish</button>
+        <span class="pill" id="status-pill" style="border:1px solid rgba(248,113,113,0.3);" class="status-stopped">
+          <span id="status-dot" style="width:6px;height:6px;border-radius:50%;background:var(--danger);display:inline-block;"></span>
+          &nbsp;<span id="status-text">To'xtatilgan</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">So'rovlar logi</div>
+      <div class="log-box" id="poll-log">
+        <span class="log-line">// Polling hali boshlanmagan. "Boshlash" tugmasini bosing.</span>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:10px;">
+        <button class="btn btn-save" onclick="clearLog()">Logni tozalash</button>
+        <button class="btn btn-save" onclick="exportLog()">⬇ Logni saqlash</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CREDS = { user: 'admin', pass: '18092010' };
+  let pollTimer = null;
+  let total = 0, ok = 0, errors = 0;
+
+  // ─── Login ───
+  function doLogin() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value;
+    if (u === CREDS.user && p === CREDS.pass) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('panel').style.display = 'block';
+      loadAll();
+    } else {
+      document.getElementById('err-msg').textContent = '✗ Login yoki parol noto\'g\'ri!';
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (document.getElementById('login-screen').style.display !== 'none') doLogin();
+    }
+  });
+
+  function doLogout() {
+    stopPolling();
+    document.getElementById('panel').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('err-msg').textContent = '';
+  }
+
+  // ─── Tabs ───
+  function switchTab(name) {
+    const tabs = ['data', 'code', 'polling'];
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', tabs[i] === name));
+    tabs.forEach(n => {
+      const el = document.getElementById('tab-' + n);
+      if (el) el.classList.toggle('active', n === name);
+    });
+  }
+
+  // ─── Save / Load ───
+  function saveField(id, toastId) {
+    try { localStorage.setItem('bap_' + id, document.getElementById(id).value); } catch(e) {}
+    const t = document.getElementById(toastId);
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function loadAll() {
+    ['bot-data', 'bot-config', 'bot-code'].forEach(id => {
+      try {
+        const v = localStorage.getItem('bap_' + id);
+        if (v !== null) document.getElementById(id).value = v;
+      } catch(e) {}
+    });
+    try {
+      const u = localStorage.getItem('bap_poll-url');
+      if (u) document.getElementById('poll-url').value = u;
+    } catch(e) {}
+  }
+
+  // ─── Export code ───
+  function exportCode() {
+    const code = document.getElementById('bot-code').value;
+    const blob = new Blob([code], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bot_code.js';
+    a.click();
+  }
+
+  // ─── Polling ───
+  function addLog(msg, type) {
+    const box = document.getElementById('poll-log');
+    const now = new Date();
+    const t = now.toTimeString().slice(0, 8);
+    const line = document.createElement('div');
+    line.className = 'log-' + (type || 'line');
+    line.textContent = '[' + t + '] ' + msg;
+    if (box.children.length === 1 && box.children[0].textContent.startsWith('//')) {
+      box.innerHTML = '';
+    }
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function doPoll() {
+    const url = document.getElementById('poll-url').value.trim();
+    const method = document.getElementById('poll-method').value;
+    if (!url) { addLog('URL bo\'sh! Avval URL kiriting.', 'warn'); return; }
+
+    total++;
+    document.getElementById('m-total').textContent = total;
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(url, { method, signal: controller.signal, mode: 'cors' });
+      clearTimeout(timeout);
+
+      if (res.ok) {
+        ok++;
+        document.getElementById('m-ok').textContent = ok;
+        let body = '';
+        try {
+          const json = await res.json();
+          body = JSON.stringify(json).slice(0, 120);
+        } catch(e) {
+          body = await res.text().catch(() => '');
+          body = body.slice(0, 120);
+        }
+        addLog('✓ ' + res.status + ' ' + res.statusText + ' → ' + body, 'ok');
+      } else {
+        errors++;
+        document.getElementById('m-err').textContent = errors;
+        addLog('✗ HTTP ' + res.status + ' ' + res.statusText, 'err');
+      }
+    } catch (e) {
+      errors++;
+      document.getElementById('m-err').textContent = errors;
+      if (e.name === 'AbortError') {
+        addLog('✗ Timeout — server javob bermadi (10s)', 'err');
+      } else {
+        addLog('✗ ' + (e.message || 'So\'rov amalga oshmadi'), 'err');
+      }
+    }
+  }
+
+  function startPolling() {
+    const sec = Math.max(1, parseInt(document.getElementById('poll-interval').value) || 5);
+    try { localStorage.setItem('bap_poll-url', document.getElementById('poll-url').value); } catch(e) {}
+
+    document.getElementById('btn-start').style.display = 'none';
+    document.getElementById('btn-stop').style.display = 'inline-block';
+    const pill = document.getElementById('status-pill');
+    pill.style.border = '1px solid rgba(74,222,128,0.3)';
+    document.getElementById('status-dot').style.background = 'var(--accent)';
+    document.getElementById('status-text').textContent = 'Ishlayapti';
+
+    addLog('Polling boshlandi. Interval: ' + sec + ' s', 'warn');
+    doPoll();
+    pollTimer = setInterval(doPoll, sec * 1000);
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    document.getElementById('btn-start').style.display = 'inline-block';
+    document.getElementById('btn-stop').style.display = 'none';
+    const pill = document.getElementById('status-pill');
+    pill.style.border = '1px solid rgba(248,113,113,0.3)';
+    document.getElementById('status-dot').style.background = 'var(--danger)';
+    document.getElementById('status-text').textContent = 'To\'xtatilgan';
+    addLog('Polling to\'xtatildi.', 'warn');
+  }
+
+  function clearLog() {
+    document.getElementById('poll-log').innerHTML =
+      '<span class="log-line">// Log tozalandi.</span>';
+  }
+
+  function exportLog() {
+    const lines = Array.from(document.getElementById('poll-log').children)
+      .map(l => l.textContent).join('\n');
+    const blob = new Blob([lines], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'polling_log.txt';
+    a.click();
+  }
+
+  // Sahifa yopilganda polling to'xtatiladi
+  window.addEventListener('beforeunload', stopPolling);
+</script>
+</body>
+</html>
