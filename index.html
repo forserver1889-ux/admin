@@ -1,645 +1,604 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Bot Admin Panel</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotRunner — Telegram Bot IDE</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #0d0f14;
-  --surface: #161920;
-  --surface2: #1e2230;
-  --border: #2a2f42;
-  --accent: #4ade80;
-  --accent-dim: rgba(74,222,128,0.12);
-  --danger: #f87171;
-  --danger-dim: rgba(248,113,113,0.12);
-  --warn: #fbbf24;
-  --info: #60a5fa;
-  --text: #e8eaf0;
-  --muted: #6b7280;
-  --mono: 'JetBrains Mono', monospace;
-  --sans: 'Syne', sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(74,222,128,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(74,222,128,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none; z-index: 0;
-}
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(16px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg: #0e0e12;
+    --surface: #16161d;
+    --surface2: #1e1e28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #7c6af7;
+    --accent2: #a78bfa;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --text: #e4e4f0;
+    --text2: #8888aa;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
 
-/* LOGIN */
-#login-screen {
-  position:relative; z-index:10;
-  width:100%; max-width:400px; padding:24px;
-  animation:fadeUp .5s ease both;
-}
-.login-logo { text-align:center; margin-bottom:28px; }
-.login-logo small { font-size:10px; font-family:var(--mono); color:var(--accent); letter-spacing:.25em; text-transform:uppercase; }
-.login-logo h1 { font-size:26px; font-weight:800; margin-top:4px; }
-.login-card {
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:16px; padding:28px; position:relative; overflow:hidden;
-}
-.login-card::before {
-  content:''; position:absolute; top:-50px; right:-50px;
-  width:160px; height:160px;
-  background:radial-gradient(circle, rgba(74,222,128,0.13), transparent 70%);
-  pointer-events:none;
-}
-.field { margin-bottom:16px; }
-.field label { display:block; font-size:10px; font-family:var(--mono); color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px; }
-.field input {
-  width:100%; background:var(--bg); border:1px solid var(--border);
-  border-radius:8px; padding:10px 13px; font-family:var(--mono);
-  font-size:13px; color:var(--text); outline:none; transition:border-color .2s;
-}
-.field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(74,222,128,.09); }
-.btn-login {
-  width:100%; margin-top:6px; padding:11px;
-  background:var(--accent); color:#0d1f0f;
-  border:none; border-radius:8px; font-family:var(--sans);
-  font-size:14px; font-weight:700; cursor:pointer; transition:opacity .2s;
-}
-.btn-login:hover { opacity:.88; }
-.err { margin-top:10px; font-size:12px; font-family:var(--mono); color:var(--danger); text-align:center; min-height:16px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-/* PANEL */
-#panel {
-  display:none; width:100%; max-width:920px;
-  min-height:100vh; padding:24px;
-  position:relative; z-index:10;
-  animation:fadeUp .4s ease both;
-}
-.top-bar {
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border);
-}
-.top-title { font-size:19px; font-weight:800; }
-.pill {
-  display:inline-flex; align-items:center; gap:5px;
-  font-size:10px; font-family:var(--mono); padding:3px 10px; border-radius:99px;
-}
-.pill-online { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(74,222,128,.3); }
-.pill-dot { width:6px; height:6px; background:var(--accent); border-radius:50%; animation:blink 1.4s infinite; }
-.btn-logout {
-  font-size:12px; font-family:var(--mono); padding:5px 13px;
-  background:transparent; border:1px solid var(--border);
-  color:var(--muted); border-radius:6px; cursor:pointer; transition:all .2s;
-}
-.btn-logout:hover { border-color:var(--danger); color:var(--danger); }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 52px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
 
-/* Tabs */
-.tabs {
-  display:flex; gap:2px; margin-bottom:18px;
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:10px; padding:4px;
-}
-.tab {
-  flex:1; padding:8px 12px; font-family:var(--sans); font-size:13px;
-  font-weight:600; color:var(--muted); background:transparent;
-  border:none; border-radius:7px; cursor:pointer; transition:all .2s; text-align:center;
-}
-.tab.active { background:var(--surface2); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.4); }
-.tab-content { display:none; }
-.tab-content.active { display:block; animation:fadeUp .22s ease both; }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+  }
 
-/* Card */
-.card {
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:12px; padding:20px; margin-bottom:14px;
-}
-.card-label {
-  font-size:10px; font-family:var(--mono); color:var(--accent);
-  letter-spacing:.18em; text-transform:uppercase; margin-bottom:10px;
-}
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent), #c084fc);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
 
-/* Textarea */
-textarea {
-  width:100%; background:var(--bg); border:1px solid var(--border);
-  border-radius:8px; padding:11px 13px; font-family:var(--mono);
-  font-size:12px; color:var(--text); resize:vertical; outline:none;
-  line-height:1.75; transition:border-color .2s;
-}
-textarea:focus { border-color:rgba(74,222,128,.4); }
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: var(--mono);
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+  }
 
-/* Buttons */
-.btn {
-  padding:8px 16px; font-family:var(--sans); font-size:12px;
-  font-weight:700; border-radius:7px; cursor:pointer;
-  transition:all .18s; border:1px solid transparent;
-}
-.btn-ghost { background:var(--surface2); color:var(--text); border-color:var(--border); }
-.btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
-.btn-green { background:var(--accent-dim); color:var(--accent); border-color:rgba(74,222,128,.35); }
-.btn-green:hover { background:rgba(74,222,128,.22); }
-.btn-red { background:var(--danger-dim); color:var(--danger); border-color:rgba(248,113,113,.35); }
-.btn-red:hover { background:rgba(248,113,113,.22); }
-.btn-blue { background:rgba(96,165,250,.12); color:var(--info); border-color:rgba(96,165,250,.35); }
-.btn-blue:hover { background:rgba(96,165,250,.22); }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text2);
+  }
+  .dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.5s infinite; }
+  .dot.error { background: var(--red); }
 
-.toast { display:inline-block; font-size:11px; font-family:var(--mono); color:var(--accent); margin-left:10px; opacity:0; transition:opacity .3s; }
-.toast.show { opacity:1; }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
 
-/* Metrics */
-.metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
-.metric { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:13px 15px; }
-.metric-lbl { font-size:9px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:5px; }
-.metric-val { font-size:24px; font-weight:800; font-family:var(--mono); color:var(--text); }
-.metric-val.green { color:var(--accent); }
-.metric-val.red   { color:var(--danger); }
-.metric-val.blue  { color:var(--info); }
+  .token-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
 
-/* Input */
-.inp {
-  background:var(--bg); border:1px solid var(--border); border-radius:7px;
-  padding:8px 11px; font-family:var(--mono); font-size:12px;
-  color:var(--text); outline:none; transition:border-color .2s;
-}
-.inp:focus { border-color:rgba(74,222,128,.4); }
-.inp-full { width:100%; }
-.inp-sm { width:72px; }
+  .token-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+  }
 
-/* Log */
-.log-box {
-  background:var(--bg); border:1px solid var(--border); border-radius:8px;
-  padding:11px 13px; font-family:var(--mono); font-size:11.5px;
-  line-height:1.85; min-height:160px; max-height:280px;
-  overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent;
-}
-.l-muted { color:var(--muted); }
-.l-ok    { color:var(--accent); }
-.l-err   { color:var(--danger); }
-.l-warn  { color:var(--warn); }
-.l-info  { color:var(--info); }
-.l-bot   { color:#c084fc; }
+  .token-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 7px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .token-input:focus { border-color: var(--accent); }
+  .token-input::placeholder { color: var(--text2); }
 
-/* Banner */
-.bot-banner {
-  display:flex; align-items:center; gap:10px;
-  background:var(--accent-dim); border:1px solid rgba(74,222,128,.25);
-  border-radius:8px; padding:10px 14px; margin-bottom:14px;
-  font-size:12px; font-family:var(--mono); color:var(--accent);
-}
-.bot-banner.off { background:var(--danger-dim); border-color:rgba(248,113,113,.25); color:var(--danger); }
+  .btn {
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.97); }
 
-/* Upload */
-.upload-zone {
-  border:1.5px dashed var(--border); border-radius:10px;
-  padding:20px; text-align:center; cursor:pointer;
-  transition:border-color .2s; margin-bottom:12px;
-}
-.upload-zone:hover { border-color:var(--accent); }
-.upload-zone input { display:none; }
+  .btn-start { background: var(--accent); color: white; }
+  .btn-start:hover { background: #6b58f0; }
+
+  .btn-stop {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid rgba(248,113,113,0.3);
+  }
+  .btn-stop:hover { background: rgba(248,113,113,0.1); }
+
+  .btn-clear {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+    font-size: 12px;
+    padding: 7px 12px;
+  }
+  .btn-clear:hover { color: var(--text); }
+
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .editor-panel {
+    display: flex;
+    flex-direction: column;
+    width: 55%;
+    border-right: 1px solid var(--border);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .panel-title {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .tab {
+    padding: 3px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--accent2);
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+  }
+
+  #editor {
+    flex: 1;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.65;
+    padding: 16px;
+    border: none;
+    outline: none;
+    resize: none;
+    overflow-y: auto;
+  }
+
+  .examples-wrap {
+    padding: 8px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .examples-select {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 6px 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .log-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    background: var(--bg);
+  }
+
+  .log-line {
+    display: flex;
+    gap: 10px;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.025);
+  }
+
+  .log-time { color: var(--text2); flex-shrink: 0; font-size: 11px; }
+  .log-type { flex-shrink: 0; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+  .log-type.info  { background: rgba(124,106,247,0.15); color: var(--accent2); }
+  .log-type.msg   { background: rgba(52,211,153,0.12); color: var(--green); }
+  .log-type.err   { background: rgba(248,113,113,0.12); color: var(--red); }
+  .log-type.sys   { background: rgba(251,191,36,0.1); color: var(--yellow); }
+  .log-msg { color: var(--text); word-break: break-all; }
+
+  .setup-guide {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .guide-title {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--yellow);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+  }
+
+  .guide-step {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    display: flex;
+    gap: 8px;
+    margin-bottom: 3px;
+  }
+  .guide-step span:first-child { color: var(--accent2); }
+
+  .proxy-note {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: rgba(124,106,247,0.08);
+    border: 1px solid rgba(124,106,247,0.2);
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--accent2);
+  }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-logo">
-    <small>system access</small>
-    <h1>Bot Admin Panel</h1>
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    BotRunner
   </div>
-  <div class="login-card">
-    <div class="field">
-      <label>Login</label>
-      <input type="text" id="un" placeholder="admin" autocomplete="off"/>
-    </div>
-    <div class="field">
-      <label>Parol</label>
-      <input type="password" id="pw" placeholder="••••••••"/>
-    </div>
-    <button class="btn-login" onclick="doLogin()">Kirish →</button>
-    <p class="err" id="err-msg"></p>
+  <div class="status-pill">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">To'xtatilgan</span>
   </div>
 </div>
 
-<!-- PANEL -->
-<div id="panel">
-  <div class="top-bar">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <span class="top-title">Bot Admin Panel</span>
-      <span class="pill pill-online"><span class="pill-dot"></span>online</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span id="bot-status-top" style="font-size:11px;font-family:var(--mono);color:var(--muted);">Bot: to'xtatilgan</span>
-      <button class="btn-logout" onclick="doLogout()">Chiqish</button>
-    </div>
-  </div>
+<div class="token-bar">
+  <span class="token-label">Token:</span>
+  <input class="token-input" id="tokenInput" type="password" placeholder="123456789:ABCDEFGHIJKLMNabcdefghijklmn...">
+  <button class="btn btn-start" id="btnStart" onclick="startBot()">▶ Ishga tushir</button>
+  <button class="btn btn-stop" id="btnStop" onclick="stopBot()" style="display:none">■ To'xtat</button>
+</div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="sw('bot')">🤖 Bot kodi</button>
-    <button class="tab" onclick="sw('token')">🔑 Token / Config</button>
-    <button class="tab" onclick="sw('polling')">📡 Polling logi</button>
-  </div>
-
-  <!-- BOT KODI TAB -->
-  <div id="tab-bot" class="tab-content active">
-    <div id="bot-banner" class="bot-banner off">
-      <span>⬤</span> Bot hozir to'xtatilgan
+<div class="main">
+  <div class="editor-panel">
+    <div class="panel-header">
+      <span class="panel-title">Bot kodi (JavaScript)</span>
+      <span class="tab">bot.js</span>
     </div>
 
-    <div class="card">
-      <div class="card-label">JS faylni yuklash</div>
-      <div class="upload-zone" onclick="document.getElementById('file-inp').click()">
-        <input type="file" id="file-inp" accept=".js,.txt" onchange="loadFile(event)"/>
-        <div style="font-size:28px;">📂</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:6px;">Bosing va .js fayl tanlang</div>
-        <div style="font-size:11px;color:var(--border);margin-top:3px;">.js yoki .txt qabul qilinadi</div>
-      </div>
+    <textarea id="editor" spellcheck="false" placeholder="// Bot kodingizni shu yerga yozing...
+// Majburiy: handleUpdate(update) funksiyasi bo'lishi kerak
+// Tayyor namunalardan birini pastdan tanlang"></textarea>
 
-      <div class="card-label">Yoki quyida to'g'ridan yozing:</div>
-      <textarea id="bot-code" rows="14" placeholder="// Bot kodingizni shu yerga yozing
-//
-// Mavjud funksiyalar:
-//   onMessage(fn)              — yangi xabar kelganda
-//   sendMessage(chatId, text)  — xabar yuborish
-//   log(matn)                  — logga yozish
-//   TOKEN                      — bot tokeningiz
-//   CHAT_ID                    — config dagi chat id
-//
-// Misol:
-// onMessage(async (update) => {
-//   const msg = update.message;
-//   if (!msg || !msg.text) return;
-//   await sendMessage(msg.chat.id, 'Siz: ' + msg.text);
-// });"></textarea>
-
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
-        <button class="btn btn-green" id="run-btn" onclick="runBot()">▶ Botni ishga tushirish</button>
-        <button class="btn btn-red" id="stop-btn" onclick="stopBot()" style="display:none;">■ To'xtatish</button>
-        <button class="btn btn-ghost" onclick="saveCode()">💾 Saqlash</button>
-        <button class="btn btn-blue" onclick="loadExample()">📋 Namuna</button>
-        <span class="toast" id="toast-code">✓ Saqlandi</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Bot logi</div>
-      <div class="log-box" id="bot-log"><span class="l-muted">// Bot ishga tushirilmagan...</span></div>
-      <div style="margin-top:10px;">
-        <button class="btn btn-ghost" onclick="clearLog('bot-log')">Tozalash</button>
-      </div>
+    <div class="examples-wrap">
+      <span class="panel-title">Namuna:</span>
+      <select class="examples-select" onchange="loadExample(this.value)">
+        <option value="">— Tayyor misol tanlang —</option>
+        <option value="echo">Echo bot (xabarni qaytaradi)</option>
+        <option value="commands">Buyruqlar bilan bot</option>
+        <option value="inline">Inline tugmalar</option>
+        <option value="weather">Ob-havo boti (API)</option>
+      </select>
     </div>
   </div>
 
-  <!-- TOKEN TAB -->
-  <div id="tab-token" class="tab-content">
-    <div class="card">
-      <div class="card-label">Bot Token (@BotFather dan)</div>
-      <input class="inp inp-full" type="text" id="cfg-token" placeholder="1234567890:AAFxxxxxxxxxxxxxxxxxxxxxxxxx" style="margin-bottom:14px;" autocomplete="off"/>
-
-      <div class="card-label">Chat ID (ixtiyoriy)</div>
-      <input class="inp inp-full" type="text" id="cfg-chatid" placeholder="123456789" style="margin-bottom:14px;"/>
-
-      <div class="card-label">Polling interval (soniya)</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-        <input class="inp inp-sm" type="number" id="cfg-interval" value="2" min="1" max="60"/>
-        <span style="font-size:12px;color:var(--muted);font-family:var(--mono);">soniyada bir tekshiradi</span>
-      </div>
-
-      <div style="display:flex;gap:10px;align-items:center;">
-        <button class="btn btn-ghost" onclick="saveCfg()">💾 Saqlash</button>
-        <button class="btn btn-blue" onclick="testToken()">🔍 Tokenni tekshirish</button>
-        <span class="toast" id="toast-cfg">✓ Saqlandi</span>
+  <div class="log-panel">
+    <div class="panel-header">
+      <span class="panel-title">Jonli log</span>
+      <button class="btn btn-clear" onclick="clearLog()">✕ Tozala</button>
+    </div>
+    <div id="log">
+      <div class="log-line">
+        <span class="log-time">00:00:00</span>
+        <span class="log-type sys">SYS</span>
+        <span class="log-msg">BotRunner tayyor. Token kiriting va botni ishga tushiring.</span>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-label">Tekshiruv natijasi</div>
-      <div class="log-box" id="token-log" style="min-height:80px;"><span class="l-muted">// Hali tekshirilmagan</span></div>
-    </div>
-  </div>
-
-  <!-- POLLING TAB -->
-  <div id="tab-polling" class="tab-content">
-    <div class="metrics">
-      <div class="metric"><div class="metric-lbl">Jami so'rovlar</div><div class="metric-val" id="m-total">0</div></div>
-      <div class="metric"><div class="metric-lbl">Muvaffaqiyatli</div><div class="metric-val green" id="m-ok">0</div></div>
-      <div class="metric"><div class="metric-lbl">Xatoliklar</div><div class="metric-val red" id="m-err">0</div></div>
-      <div class="metric"><div class="metric-lbl">Xabarlar</div><div class="metric-val blue" id="m-proc">0</div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Polling logi</div>
-      <div class="log-box" id="poll-log"><span class="l-muted">// Polling hali boshlanmagan</span></div>
-      <div style="margin-top:10px;display:flex;gap:10px;">
-        <button class="btn btn-ghost" onclick="clearLog('poll-log')">Tozalash</button>
-        <button class="btn btn-ghost" onclick="exportLog()">⬇ Saqlash</button>
-      </div>
+    <div class="setup-guide">
+      <div class="guide-title">⚠ Qanday ishlaydi</div>
+      <div class="guide-step"><span>1.</span><span>Token — @BotFather dan oling</span></div>
+      <div class="guide-step"><span>2.</span><span>Kod yozing yoki namuna tanlang</span></div>
+      <div class="guide-step"><span>3.</span><span>▶ Ishga tushir tugmasini bosing</span></div>
+      <div class="guide-step"><span>4.</span><span>Sayt ochiq turganida bot ishlaydi</span></div>
+      <div class="proxy-note">ℹ Polling usuli ishlatiladi — server yoki webhook shart emas. Sayt yopilsa bot to'xtaydi.</div>
     </div>
   </div>
 </div>
 
 <script>
-// ── Auth ──
-const CREDS = {user:'admin', pass:'18092010'};
+const EXAMPLES = {
+  echo: `// Echo bot — barcha xabarlarni qaytaradi
+async function handleUpdate(update) {
+  const msg = update.message;
+  if (!msg || !msg.text) return;
+  await sendMessage(msg.chat.id, "Echo: " + msg.text);
+}`,
 
-function doLogin() {
-  const u = document.getElementById('un').value.trim();
-  const p = document.getElementById('pw').value;
-  if (u === CREDS.user && p === CREDS.pass) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('panel').style.display = 'block';
-    loadAll();
+  commands: `// Buyruqlar bilan bot
+async function handleUpdate(update) {
+  const msg = update.message;
+  if (!msg || !msg.text) return;
+  const text = msg.text;
+  const chatId = msg.chat.id;
+  const name = msg.from.first_name || "Do'st";
+
+  if (text === "/start") {
+    await sendMessage(chatId, \`Salom, \${name}! Men botman.\\n\\nBuyruqlar:\\n/yordam — yordam\\n/vaqt — hozirgi vaqt\`);
+  } else if (text === "/yordam") {
+    await sendMessage(chatId, "Yordam:\\n• /start — boshlash\\n• /vaqt — vaqtni ko'rish");
+  } else if (text === "/vaqt") {
+    await sendMessage(chatId, "Hozirgi vaqt: " + new Date().toLocaleString("uz-UZ"));
   } else {
-    document.getElementById('err-msg').textContent = '✗ Login yoki parol noto\'g\'ri!';
+    await sendMessage(chatId, "Noma'lum buyruq. /yordam ni ko'ring.");
+  }
+}`,
+
+  inline: `// Inline tugmalar bilan bot
+async function handleUpdate(update) {
+  if (update.message) {
+    const msg = update.message;
+    if (msg.text === "/start") {
+      await sendMessageWithButtons(msg.chat.id, "Qaysi bo'limni tanlaysiz?", [
+        [{text: "📚 Savollar", callback_data: "savollar"}],
+        [{text: "ℹ️ Haqida", callback_data: "haqida"}, {text: "📞 Aloqa", callback_data: "aloqa"}]
+      ]);
+    }
+  }
+  if (update.callback_query) {
+    const cb = update.callback_query;
+    await answerCallback(cb.id);
+    if (cb.data === "savollar") {
+      await sendMessage(cb.message.chat.id, "Savollar bo'limi tez orada!");
+    } else if (cb.data === "haqida") {
+      await sendMessage(cb.message.chat.id, "Bu BotRunner yordamida yaratilgan bot.");
+    } else if (cb.data === "aloqa") {
+      await sendMessage(cb.message.chat.id, "Aloqa: @admin");
+    }
   }
 }
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
-});
-function doLogout() {
-  stopBot();
-  document.getElementById('panel').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('un').value = '';
-  document.getElementById('pw').value = '';
-  document.getElementById('err-msg').textContent = '';
-}
 
-// ── Tabs ──
-function sw(name) {
-  const names = ['bot','token','polling'];
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
-  names.forEach(n => {
-    const el = document.getElementById('tab-'+n);
-    if (el) el.classList.toggle('active', n===name);
+async function sendMessageWithButtons(chatId, text, keyboard) {
+  return tgAPI("sendMessage", {
+    chat_id: chatId, text,
+    reply_markup: {inline_keyboard: keyboard}
   });
 }
 
-// ── Save/Load ──
-function saveCode() {
-  try { localStorage.setItem('bap_code', document.getElementById('bot-code').value); } catch(e){}
-  showToast('toast-code');
-}
-function saveCfg() {
-  try {
-    localStorage.setItem('bap_token', document.getElementById('cfg-token').value.trim());
-    localStorage.setItem('bap_chatid', document.getElementById('cfg-chatid').value.trim());
-    localStorage.setItem('bap_interval', document.getElementById('cfg-interval').value);
-  } catch(e){}
-  showToast('toast-cfg');
-}
-function loadAll() {
-  try {
-    const c = localStorage.getItem('bap_code'); if(c) document.getElementById('bot-code').value = c;
-    const t = localStorage.getItem('bap_token'); if(t) document.getElementById('cfg-token').value = t;
-    const ci = localStorage.getItem('bap_chatid'); if(ci) document.getElementById('cfg-chatid').value = ci;
-    const iv = localStorage.getItem('bap_interval'); if(iv) document.getElementById('cfg-interval').value = iv;
-  } catch(e){}
-}
-function showToast(id) {
-  const t = document.getElementById(id);
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2200);
-}
+async function answerCallback(callbackQueryId) {
+  return tgAPI("answerCallbackQuery", {callback_query_id: callbackQueryId});
+}`,
 
-// ── File upload ──
-function loadFile(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('bot-code').value = e.target.result;
-    addLog('bot-log', '📂 Fayl yuklandi: ' + file.name, 'l-info');
-  };
-  reader.readAsText(file);
-  event.target.value = '';
-}
-
-// ── Example ──
-function loadExample() {
-  document.getElementById('bot-code').value =
-`// ══ Namuna bot ══
-// /start — salomlashadi
-// /help  — yordam
-// Boshqa xabar — takrorlaydi
-
-onMessage(async (update) => {
+  weather: `// Ob-havo boti
+async function handleUpdate(update) {
   const msg = update.message;
   if (!msg || !msg.text) return;
-
+  const text = msg.text.trim();
   const chatId = msg.chat.id;
-  const text   = msg.text;
-  const name   = msg.from.first_name || 'Do\\'st';
 
-  log('Xabar keldi: ' + text + ' (' + chatId + ')');
-
-  if (text === '/start') {
-    await sendMessage(chatId, '👋 Salom, ' + name + '!\\nMen botman. /help yozing.');
-  } else if (text === '/help') {
-    await sendMessage(chatId, '📋 Buyruqlar:\\n/start — boshlash\\n/help — yordam\\nBoshqa — takrorlash');
-  } else {
-    await sendMessage(chatId, '🔁 ' + text);
+  if (text === "/start") {
+    await sendMessage(chatId, "Shahar nomini yuboring!\\nMasalan: Toshkent");
+    return;
   }
-});`;
-  addLog('bot-log', '📋 Namuna kod yuklandi', 'l-info');
-}
 
-// ── Log helpers ──
-function addLog(boxId, msg, cls) {
-  const box = document.getElementById(boxId);
-  if (box.children.length === 1 && box.children[0].textContent.startsWith('//')) box.innerHTML = '';
-  const now = new Date().toTimeString().slice(0,8);
-  const line = document.createElement('div');
-  line.className = cls || 'l-muted';
-  line.textContent = '[' + now + '] ' + msg;
-  box.appendChild(line);
-  box.scrollTop = box.scrollHeight;
-}
-function clearLog(id) {
-  document.getElementById(id).innerHTML = '<span class="l-muted">// Log tozalandi</span>';
-}
-function exportLog() {
-  const lines = Array.from(document.getElementById('poll-log').children).map(l=>l.textContent).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([lines],{type:'text/plain'}));
-  a.download = 'bot_log.txt'; a.click();
-}
-
-// ── Token test ──
-async function testToken() {
-  const token = document.getElementById('cfg-token').value.trim();
-  if (!token) { addLog('token-log','❌ Token kiritilmagan!','l-err'); return; }
-  addLog('token-log','⏳ Tekshirilmoqda...','l-warn');
+  await sendMessage(chatId, \`⏳ \${text} uchun ob-havo olinmoqda...\`);
   try {
-    const r = await fetch('https://api.telegram.org/bot' + token + '/getMe');
-    const d = await r.json();
-    if (d.ok) {
-      const b = d.result;
-      addLog('token-log', '✓ Token to\'g\'ri!', 'l-ok');
-      addLog('token-log', '🤖 @' + b.username + ' — ' + b.first_name, 'l-ok');
-      addLog('token-log', '🆔 Bot ID: ' + b.id, 'l-info');
-    } else {
-      addLog('token-log', '✗ ' + d.description, 'l-err');
-    }
+    const res = await fetch(\`https://wttr.in/\${encodeURIComponent(text)}?format=j1\`);
+    const data = await res.json();
+    const cur = data.current_condition[0];
+    const reply = \`🌍 \${text}\\n\` +
+      \`🌡 Harorat: \${cur.temp_C}°C (his: \${cur.FeelsLikeC}°C)\\n\` +
+      \`💧 Namlik: \${cur.humidity}%\\n\` +
+      \`💨 Shamol: \${cur.windspeedKmph} km/h\\n\` +
+      \`📋 Holat: \${cur.weatherDesc[0].value}\`;
+    await sendMessage(chatId, reply);
   } catch(e) {
-    addLog('token-log', '✗ Ulanib bo\'lmadi: ' + e.message, 'l-err');
+    await sendMessage(chatId, "Kechirasiz, xatolik yuz berdi. Shahar nomini tekshiring.");
   }
+}`
+};
+
+let isRunning = false;
+let pollingInterval = null;
+let lastUpdateId = 0;
+let token = "";
+let userHandleUpdate = async () => {};
+
+function loadExample(key) {
+  if (!key) return;
+  document.getElementById("editor").value = EXAMPLES[key];
+  log("sys", "Namuna yuklandi: " + key);
 }
 
-// ══════════════════════════════════
-//  BOT ENGINE
-// ══════════════════════════════════
-let botRunning = false;
-let pollTimer  = null;
-let offset = 0;
-let total = 0, okC = 0, errC = 0, procC = 0;
-let userHandler = null;
+function log(type, msg) {
+  const logEl = document.getElementById("log");
+  const time = new Date().toTimeString().split(" ")[0];
+  const line = document.createElement("div");
+  line.className = "log-line";
+  line.innerHTML = `<span class="log-time">${time}</span><span class="log-type ${type}">${type.toUpperCase()}</span><span class="log-msg">${esc(msg)}</span>`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
 
-// Foydalanuvchi kodida ishlatiladigan funksiyalar
-function onMessage(fn)  { userHandler = fn; addLog('bot-log','✓ onMessage handler tayyor','l-ok'); }
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
 
-function log(text) { addLog('bot-log', '📝 ' + text, 'l-bot'); }
+function clearLog() {
+  document.getElementById("log").innerHTML = "";
+}
+
+function setStatus(state) {
+  const dot = document.getElementById("statusDot");
+  const text = document.getElementById("statusText");
+  dot.className = "dot" + (state === "running" ? " running" : state === "error" ? " error" : "");
+  text.textContent = state === "running" ? "Ishlayapti" : state === "error" ? "Xatolik" : "To'xtatilgan";
+}
+
+async function tgRequest(method, params = {}) {
+  const resp = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(params)
+  });
+  return resp.json();
+}
 
 async function sendMessage(chatId, text) {
-  const token = document.getElementById('cfg-token').value.trim();
-  if (!token) { addLog('bot-log','❌ Token yo\'q!','l-err'); return; }
-  try {
-    const r = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({chat_id: chatId, text: text})
-    });
-    const d = await r.json();
-    if (d.ok) {
-      addLog('bot-log', '✉ Yuborildi → ' + chatId + ': ' + String(text).slice(0,60), 'l-ok');
-    } else {
-      addLog('bot-log', '✗ ' + d.description, 'l-err');
-    }
-  } catch(e) {
-    addLog('bot-log', '✗ sendMessage: ' + e.message, 'l-err');
-  }
-}
-
-function setBotUI(running) {
-  botRunning = running;
-  document.getElementById('run-btn').style.display  = running ? 'none' : 'inline-block';
-  document.getElementById('stop-btn').style.display = running ? 'inline-block' : 'none';
-  const banner = document.getElementById('bot-banner');
-  const top    = document.getElementById('bot-status-top');
-  if (running) {
-    banner.className = 'bot-banner';
-    banner.innerHTML = '<span style="animation:blink 1s infinite;display:inline-block">⬤</span>&nbsp;Bot ishlayapti — xabarlar kutilmoqda...';
-    top.style.color = 'var(--accent)';
-    top.textContent = 'Bot: ishlayapti ✓';
+  const res = await tgRequest("sendMessage", {chat_id: chatId, text});
+  if (res.ok) {
+    log("msg", "→ [" + chatId + "] " + String(text).substring(0, 80) + (text.length > 80 ? "..." : ""));
   } else {
-    banner.className = 'bot-banner off';
-    banner.innerHTML = '<span>⬤</span> Bot hozir to\'xtatilgan';
-    top.style.color = 'var(--muted)';
-    top.textContent = 'Bot: to\'xtatilgan';
+    log("err", "sendMessage xatolik: " + (res.description || "?"));
   }
+  return res;
 }
 
-function updateM() {
-  document.getElementById('m-total').textContent = total;
-  document.getElementById('m-ok').textContent    = okC;
-  document.getElementById('m-err').textContent   = errC;
-  document.getElementById('m-proc').textContent  = procC;
+async function tgAPI(method, params) {
+  return tgRequest(method, params);
 }
 
-async function runBot() {
-  const token = document.getElementById('cfg-token').value.trim();
-  if (!token) {
-    addLog('bot-log','❌ Avval "Token / Config" tabiga token kiriting!','l-err');
-    sw('token'); return;
-  }
-  const code = document.getElementById('bot-code').value.trim();
-  if (!code) {
-    addLog('bot-log','❌ Bot kodi bo\'sh! Kod yozing yoki fayl yuklang.','l-err');
-    return;
-  }
-
-  // Reset
-  userHandler = null;
-  offset = 0; total = 0; okC = 0; errC = 0; procC = 0;
-  updateM();
-
-  addLog('bot-log','⚙ Kod yuklanmoqda...','l-warn');
+async function poll() {
   try {
-    // Foydalanuvchi kodini ishlatish
-    const fn = new Function('onMessage','sendMessage','log','TOKEN','CHAT_ID', code);
-    fn(onMessage, sendMessage, log,
-       token,
-       document.getElementById('cfg-chatid').value.trim());
-    addLog('bot-log','✓ Kod muvaffaqiyatli yuklandi','l-ok');
-  } catch(e) {
-    addLog('bot-log','✗ Kod xatosi: ' + e.message,'l-err');
-    return;
-  }
-
-  setBotUI(true);
-  addLog('bot-log','🚀 Bot ishga tushdi!','l-ok');
-  addLog('poll-log','🚀 Polling boshlandi','l-ok');
-
-  const ivSec = Math.max(1, parseInt(document.getElementById('cfg-interval').value)||2);
-  doPoll(token);
-  pollTimer = setInterval(() => doPoll(token), ivSec * 1000);
-}
-
-async function doPoll(token) {
-  total++; updateM();
-  try {
-    const r = await fetch(
-      'https://api.telegram.org/bot' + token + '/getUpdates?offset=' + offset + '&timeout=1'
-    );
-    const d = await r.json();
-    okC++; updateM();
-
-    if (d.ok && d.result && d.result.length > 0) {
-      for (const update of d.result) {
-        offset = update.update_id + 1;
-        procC++; updateM();
-
-        if (update.message) {
-          const m = update.message;
-          const who = m.from.username ? '@'+m.from.username : m.from.first_name;
-          addLog('poll-log', '💬 ' + who + ': ' + (m.text||'[media]'), 'l-info');
-        }
-
-        if (userHandler) {
-          try { await userHandler(update); }
-          catch(e) { addLog('bot-log','✗ Handler xatosi: '+e.message,'l-err'); }
-        }
+    const res = await tgRequest("getUpdates", {
+      offset: lastUpdateId + 1,
+      timeout: 20,
+      allowed_updates: ["message","callback_query","inline_query"]
+    });
+    if (!res.ok) {
+      log("err", "API xatolik: " + (res.description || "Noma'lum"));
+      setStatus("error");
+      return;
+    }
+    for (const update of res.result) {
+      lastUpdateId = update.update_id;
+      const from = update.message?.from?.username
+        || update.message?.from?.first_name
+        || update.callback_query?.from?.username
+        || "?";
+      const msgText = update.message?.text || update.callback_query?.data || "(media)";
+      log("msg", "← [" + from + "] " + String(msgText).substring(0, 80));
+      try {
+        await userHandleUpdate(update);
+      } catch(e) {
+        log("err", "handleUpdate xatolik: " + e.message);
       }
     }
   } catch(e) {
-    errC++; updateM();
-    addLog('poll-log','✗ '+e.message,'l-err');
+    if (isRunning) {
+      log("err", "Ulanish xatoligi: " + e.message);
+    }
   }
+}
+
+async function startBot() {
+  token = document.getElementById("tokenInput").value.trim();
+  if (!token) { log("err", "Token kiriting!"); return; }
+
+  const code = document.getElementById("editor").value.trim();
+  if (!code) { log("err", "Bot kodi bo'sh!"); return; }
+
+  try {
+    const fn = new Function("sendMessage", "tgAPI", code + "\nreturn handleUpdate;");
+    userHandleUpdate = fn(sendMessage, tgAPI);
+    if (typeof userHandleUpdate !== "function") {
+      log("err", "Kodda handleUpdate(update) funksiyasi topilmadi!");
+      return;
+    }
+  } catch(e) {
+    log("err", "Kod sintaksis xatoligi: " + e.message);
+    return;
+  }
+
+  log("sys", "Token tekshirilmoqda...");
+  const me = await tgRequest("getMe", {});
+  if (!me.ok) {
+    log("err", "Token noto'g'ri: " + (me.description || "Xatolik"));
+    setStatus("error");
+    return;
+  }
+
+  log("info", "Bot ulandi: @" + me.result.username + " (" + me.result.first_name + ")");
+  log("sys", "Polling boshlandi. Xabarlar kutilmoqda...");
+
+  isRunning = true;
+  lastUpdateId = 0;
+  setStatus("running");
+  document.getElementById("btnStart").style.display = "none";
+  document.getElementById("btnStop").style.display = "";
+
+  poll();
+  pollingInterval = setInterval(() => { if (isRunning) poll(); }, 1500);
 }
 
 function stopBot() {
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-  if (botRunning) {
-    addLog('bot-log','■ Bot to\'xtatildi','l-warn');
-    addLog('poll-log','■ Polling to\'xtatildi','l-warn');
-  }
-  setBotUI(false);
+  isRunning = false;
+  clearInterval(pollingInterval);
+  pollingInterval = null;
+  setStatus("stopped");
+  document.getElementById("btnStart").style.display = "";
+  document.getElementById("btnStop").style.display = "none";
+  log("sys", "Bot to'xtatildi.");
 }
-
-window.addEventListener('beforeunload', stopBot);
 </script>
 </body>
 </html>
