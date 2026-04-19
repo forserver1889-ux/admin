@@ -1,785 +1,645 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Bot Admin Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --bg: #0d0f14;
-    --surface: #161920;
-    --surface2: #1e2230;
-    --border: #2a2f42;
-    --accent: #4ade80;
-    --accent-dim: rgba(74,222,128,0.12);
-    --danger: #f87171;
-    --danger-dim: rgba(248,113,113,0.12);
-    --warn: #fbbf24;
-    --text: #e8eaf0;
-    --muted: #6b7280;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Syne', sans-serif;
-  }
+:root {
+  --bg: #0d0f14;
+  --surface: #161920;
+  --surface2: #1e2230;
+  --border: #2a2f42;
+  --accent: #4ade80;
+  --accent-dim: rgba(74,222,128,0.12);
+  --danger: #f87171;
+  --danger-dim: rgba(248,113,113,0.12);
+  --warn: #fbbf24;
+  --info: #60a5fa;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(74,222,128,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,222,128,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* LOGIN */
+#login-screen {
+  position:relative; z-index:10;
+  width:100%; max-width:400px; padding:24px;
+  animation:fadeUp .5s ease both;
+}
+.login-logo { text-align:center; margin-bottom:28px; }
+.login-logo small { font-size:10px; font-family:var(--mono); color:var(--accent); letter-spacing:.25em; text-transform:uppercase; }
+.login-logo h1 { font-size:26px; font-weight:800; margin-top:4px; }
+.login-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:28px; position:relative; overflow:hidden;
+}
+.login-card::before {
+  content:''; position:absolute; top:-50px; right:-50px;
+  width:160px; height:160px;
+  background:radial-gradient(circle, rgba(74,222,128,0.13), transparent 70%);
+  pointer-events:none;
+}
+.field { margin-bottom:16px; }
+.field label { display:block; font-size:10px; font-family:var(--mono); color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px; }
+.field input {
+  width:100%; background:var(--bg); border:1px solid var(--border);
+  border-radius:8px; padding:10px 13px; font-family:var(--mono);
+  font-size:13px; color:var(--text); outline:none; transition:border-color .2s;
+}
+.field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(74,222,128,.09); }
+.btn-login {
+  width:100%; margin-top:6px; padding:11px;
+  background:var(--accent); color:#0d1f0f;
+  border:none; border-radius:8px; font-family:var(--sans);
+  font-size:14px; font-weight:700; cursor:pointer; transition:opacity .2s;
+}
+.btn-login:hover { opacity:.88; }
+.err { margin-top:10px; font-size:12px; font-family:var(--mono); color:var(--danger); text-align:center; min-height:16px; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow-x: hidden;
-  }
+/* PANEL */
+#panel {
+  display:none; width:100%; max-width:920px;
+  min-height:100vh; padding:24px;
+  position:relative; z-index:10;
+  animation:fadeUp .4s ease both;
+}
+.top-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border);
+}
+.top-title { font-size:19px; font-weight:800; }
+.pill {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:10px; font-family:var(--mono); padding:3px 10px; border-radius:99px;
+}
+.pill-online { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(74,222,128,.3); }
+.pill-dot { width:6px; height:6px; background:var(--accent); border-radius:50%; animation:blink 1.4s infinite; }
+.btn-logout {
+  font-size:12px; font-family:var(--mono); padding:5px 13px;
+  background:transparent; border:1px solid var(--border);
+  color:var(--muted); border-radius:6px; cursor:pointer; transition:all .2s;
+}
+.btn-logout:hover { border-color:var(--danger); color:var(--danger); }
 
-  /* ── grid bg ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(74,222,128,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(74,222,128,0.04) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
+/* Tabs */
+.tabs {
+  display:flex; gap:2px; margin-bottom:18px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:4px;
+}
+.tab {
+  flex:1; padding:8px 12px; font-family:var(--sans); font-size:13px;
+  font-weight:600; color:var(--muted); background:transparent;
+  border:none; border-radius:7px; cursor:pointer; transition:all .2s; text-align:center;
+}
+.tab.active { background:var(--surface2); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.4); }
+.tab-content { display:none; }
+.tab-content.active { display:block; animation:fadeUp .22s ease both; }
 
-  /* ══════════════ LOGIN ══════════════ */
-  #login-screen {
-    position: relative;
-    z-index: 10;
-    width: 100%;
-    max-width: 420px;
-    padding: 24px;
-    animation: fadeUp 0.5s ease both;
-  }
+/* Card */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:20px; margin-bottom:14px;
+}
+.card-label {
+  font-size:10px; font-family:var(--mono); color:var(--accent);
+  letter-spacing:.18em; text-transform:uppercase; margin-bottom:10px;
+}
 
-  @keyframes fadeUp {
-    from { opacity:0; transform:translateY(20px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
+/* Textarea */
+textarea {
+  width:100%; background:var(--bg); border:1px solid var(--border);
+  border-radius:8px; padding:11px 13px; font-family:var(--mono);
+  font-size:12px; color:var(--text); resize:vertical; outline:none;
+  line-height:1.75; transition:border-color .2s;
+}
+textarea:focus { border-color:rgba(74,222,128,.4); }
 
-  .login-logo {
-    text-align: center;
-    margin-bottom: 32px;
-  }
+/* Buttons */
+.btn {
+  padding:8px 16px; font-family:var(--sans); font-size:12px;
+  font-weight:700; border-radius:7px; cursor:pointer;
+  transition:all .18s; border:1px solid transparent;
+}
+.btn-ghost { background:var(--surface2); color:var(--text); border-color:var(--border); }
+.btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+.btn-green { background:var(--accent-dim); color:var(--accent); border-color:rgba(74,222,128,.35); }
+.btn-green:hover { background:rgba(74,222,128,.22); }
+.btn-red { background:var(--danger-dim); color:var(--danger); border-color:rgba(248,113,113,.35); }
+.btn-red:hover { background:rgba(248,113,113,.22); }
+.btn-blue { background:rgba(96,165,250,.12); color:var(--info); border-color:rgba(96,165,250,.35); }
+.btn-blue:hover { background:rgba(96,165,250,.22); }
 
-  .login-logo span {
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--accent);
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-  }
+.toast { display:inline-block; font-size:11px; font-family:var(--mono); color:var(--accent); margin-left:10px; opacity:0; transition:opacity .3s; }
+.toast.show { opacity:1; }
 
-  .login-logo h1 {
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--text);
-    margin-top: 4px;
-  }
+/* Metrics */
+.metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.metric { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:13px 15px; }
+.metric-lbl { font-size:9px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:5px; }
+.metric-val { font-size:24px; font-weight:800; font-family:var(--mono); color:var(--text); }
+.metric-val.green { color:var(--accent); }
+.metric-val.red   { color:var(--danger); }
+.metric-val.blue  { color:var(--info); }
 
-  .login-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px;
-    position: relative;
-    overflow: hidden;
-  }
+/* Input */
+.inp {
+  background:var(--bg); border:1px solid var(--border); border-radius:7px;
+  padding:8px 11px; font-family:var(--mono); font-size:12px;
+  color:var(--text); outline:none; transition:border-color .2s;
+}
+.inp:focus { border-color:rgba(74,222,128,.4); }
+.inp-full { width:100%; }
+.inp-sm { width:72px; }
 
-  .login-card::before {
-    content: '';
-    position: absolute;
-    top: -60px; right: -60px;
-    width: 180px; height: 180px;
-    background: radial-gradient(circle, rgba(74,222,128,0.15), transparent 70%);
-    pointer-events: none;
-  }
+/* Log */
+.log-box {
+  background:var(--bg); border:1px solid var(--border); border-radius:8px;
+  padding:11px 13px; font-family:var(--mono); font-size:11.5px;
+  line-height:1.85; min-height:160px; max-height:280px;
+  overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.l-muted { color:var(--muted); }
+.l-ok    { color:var(--accent); }
+.l-err   { color:var(--danger); }
+.l-warn  { color:var(--warn); }
+.l-info  { color:var(--info); }
+.l-bot   { color:#c084fc; }
 
-  .field {
-    margin-bottom: 18px;
-  }
+/* Banner */
+.bot-banner {
+  display:flex; align-items:center; gap:10px;
+  background:var(--accent-dim); border:1px solid rgba(74,222,128,.25);
+  border-radius:8px; padding:10px 14px; margin-bottom:14px;
+  font-size:12px; font-family:var(--mono); color:var(--accent);
+}
+.bot-banner.off { background:var(--danger-dim); border-color:rgba(248,113,113,.25); color:var(--danger); }
 
-  .field label {
-    display: block;
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--muted);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .field input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 11px 14px;
-    font-family: var(--mono);
-    font-size: 14px;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .field input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(74,222,128,0.1);
-  }
-
-  .btn-login {
-    width: 100%;
-    margin-top: 8px;
-    padding: 12px;
-    background: var(--accent);
-    color: #0d1f0f;
-    border: none;
-    border-radius: 8px;
-    font-family: var(--sans);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-  }
-
-  .btn-login:hover { opacity: 0.9; }
-  .btn-login:active { transform: scale(0.98); }
-
-  .err {
-    margin-top: 12px;
-    font-size: 12px;
-    font-family: var(--mono);
-    color: var(--danger);
-    text-align: center;
-    min-height: 16px;
-  }
-
-  /* ══════════════ PANEL ══════════════ */
-  #panel {
-    display: none;
-    width: 100%;
-    max-width: 860px;
-    min-height: 100vh;
-    padding: 28px 24px;
-    position: relative;
-    z-index: 10;
-    animation: fadeUp 0.4s ease both;
-  }
-
-  .top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 28px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .top-bar-left {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .top-title {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--text);
-  }
-
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    font-family: var(--mono);
-    padding: 3px 10px;
-    border-radius: 99px;
-  }
-
-  .pill-online {
-    background: var(--accent-dim);
-    color: var(--accent);
-    border: 1px solid rgba(74,222,128,0.3);
-  }
-
-  .pill-dot {
-    width: 6px; height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: blink 1.4s infinite;
-  }
-
-  @keyframes blink {
-    0%,100% { opacity:1; }
-    50%      { opacity:0.3; }
-  }
-
-  .btn-logout {
-    font-size: 12px;
-    font-family: var(--mono);
-    padding: 6px 14px;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
-
-  /* ── Tabs ── */
-  .tabs {
-    display: flex;
-    gap: 2px;
-    margin-bottom: 20px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 4px;
-  }
-
-  .tab {
-    flex: 1;
-    padding: 9px 16px;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    background: transparent;
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-  }
-
-  .tab.active {
-    background: var(--surface2);
-    color: var(--text);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-  }
-
-  .tab-content { display: none; }
-  .tab-content.active { display: block; animation: fadeUp 0.25s ease both; }
-
-  /* ── Card ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 22px;
-    margin-bottom: 16px;
-  }
-
-  .card-label {
-    font-size: 10px;
-    font-family: var(--mono);
-    color: var(--accent);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  /* ── Textarea / code ── */
-  textarea {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-family: var(--mono);
-    font-size: 12.5px;
-    color: var(--text);
-    resize: vertical;
-    outline: none;
-    line-height: 1.7;
-    transition: border-color 0.2s;
-    min-height: 130px;
-  }
-
-  textarea:focus { border-color: rgba(74,222,128,0.4); }
-
-  /* ── Buttons ── */
-  .btn {
-    padding: 8px 20px;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: all 0.18s;
-    border: 1px solid transparent;
-  }
-
-  .btn-save {
-    background: var(--surface2);
-    color: var(--text);
-    border-color: var(--border);
-  }
-
-  .btn-save:hover { border-color: var(--accent); color: var(--accent); }
-
-  .btn-start {
-    background: var(--accent-dim);
-    color: var(--accent);
-    border-color: rgba(74,222,128,0.35);
-  }
-
-  .btn-start:hover { background: rgba(74,222,128,0.2); }
-
-  .btn-stop {
-    background: var(--danger-dim);
-    color: var(--danger);
-    border-color: rgba(248,113,113,0.35);
-  }
-
-  .btn-stop:hover { background: rgba(248,113,113,0.2); }
-
-  .toast {
-    display: inline-block;
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--accent);
-    margin-left: 10px;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .toast.show { opacity: 1; }
-
-  /* ── Metrics ── */
-  .metrics {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .metric {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-  }
-
-  .metric-lbl {
-    font-size: 10px;
-    font-family: var(--mono);
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 6px;
-  }
-
-  .metric-val {
-    font-size: 26px;
-    font-weight: 800;
-    font-family: var(--mono);
-    color: var(--text);
-  }
-
-  .metric-val.green { color: var(--accent); }
-  .metric-val.red   { color: var(--danger); }
-
-  /* ── URL row ── */
-  .url-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-
-  .url-row input {
-    flex: 1;
-    min-width: 200px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 12px;
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .url-row input:focus { border-color: rgba(74,222,128,0.4); }
-
-  .interval-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-
-  .interval-row label {
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--muted);
-  }
-
-  .interval-row input[type=number] {
-    width: 72px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 7px 10px;
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--text);
-    outline: none;
-  }
-
-  /* ── Log ── */
-  .log-box {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-family: var(--mono);
-    font-size: 11.5px;
-    line-height: 1.8;
-    min-height: 180px;
-    max-height: 260px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-
-  .log-line { color: var(--muted); }
-  .log-ok   { color: var(--accent); }
-  .log-err  { color: var(--danger); }
-  .log-warn { color: var(--warn); }
-
-  /* ── Status pill ── */
-  .status-stopped { background: var(--danger-dim); color: var(--danger); border-color: rgba(248,113,113,0.3); }
-  .status-running { background: var(--accent-dim); color: var(--accent); border-color: rgba(74,222,128,0.3); }
+/* Upload */
+.upload-zone {
+  border:1.5px dashed var(--border); border-radius:10px;
+  padding:20px; text-align:center; cursor:pointer;
+  transition:border-color .2s; margin-bottom:12px;
+}
+.upload-zone:hover { border-color:var(--accent); }
+.upload-zone input { display:none; }
 </style>
 </head>
 <body>
 
-<!-- ══ LOGIN ══ -->
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-logo">
-    <span>system access</span>
+    <small>system access</small>
     <h1>Bot Admin Panel</h1>
   </div>
   <div class="login-card">
     <div class="field">
       <label>Login</label>
-      <input type="text" id="username" placeholder="admin" autocomplete="off" />
+      <input type="text" id="un" placeholder="admin" autocomplete="off"/>
     </div>
     <div class="field">
       <label>Parol</label>
-      <input type="password" id="password" placeholder="••••••••" />
+      <input type="password" id="pw" placeholder="••••••••"/>
     </div>
     <button class="btn-login" onclick="doLogin()">Kirish →</button>
     <p class="err" id="err-msg"></p>
   </div>
 </div>
 
-<!-- ══ PANEL ══ -->
+<!-- PANEL -->
 <div id="panel">
   <div class="top-bar">
-    <div class="top-bar-left">
+    <div style="display:flex;align-items:center;gap:12px;">
       <span class="top-title">Bot Admin Panel</span>
-      <span class="pill pill-online">
-        <span class="pill-dot"></span>online
-      </span>
+      <span class="pill pill-online"><span class="pill-dot"></span>online</span>
     </div>
-    <button class="btn-logout" onclick="doLogout()">Chiqish</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="bot-status-top" style="font-size:11px;font-family:var(--mono);color:var(--muted);">Bot: to'xtatilgan</span>
+      <button class="btn-logout" onclick="doLogout()">Chiqish</button>
+    </div>
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('data')">📋 Ma'lumotlar</button>
-    <button class="tab" onclick="switchTab('code')">💻 Bot kodi</button>
-    <button class="tab" onclick="switchTab('polling')">📡 Polling</button>
+    <button class="tab active" onclick="sw('bot')">🤖 Bot kodi</button>
+    <button class="tab" onclick="sw('token')">🔑 Token / Config</button>
+    <button class="tab" onclick="sw('polling')">📡 Polling logi</button>
   </div>
 
-  <!-- TAB: Ma'lumotlar -->
-  <div id="tab-data" class="tab-content active">
-    <div class="card">
-      <div class="card-label">Bot ma'lumotlari (JSON / matn)</div>
-      <textarea id="bot-data" rows="7" placeholder='{"token": "BOT_TOKEN", "chatId": "123456", "message": "Salom!"}'></textarea>
-      <div style="margin-top:12px; display:flex; align-items:center;">
-        <button class="btn btn-save" onclick="saveField('bot-data','toast-data')">Saqlash</button>
-        <span class="toast" id="toast-data">✓ Saqlandi</span>
-      </div>
+  <!-- BOT KODI TAB -->
+  <div id="tab-bot" class="tab-content active">
+    <div id="bot-banner" class="bot-banner off">
+      <span>⬤</span> Bot hozir to'xtatilgan
     </div>
 
     <div class="card">
-      <div class="card-label">Qo'shimcha konfiguratsiya</div>
-      <textarea id="bot-config" rows="5" placeholder='{"webhook": "", "apiBase": "https://api.telegram.org", "debug": false}'></textarea>
-      <div style="margin-top:12px; display:flex; align-items:center;">
-        <button class="btn btn-save" onclick="saveField('bot-config','toast-config')">Saqlash</button>
-        <span class="toast" id="toast-config">✓ Saqlandi</span>
+      <div class="card-label">JS faylni yuklash</div>
+      <div class="upload-zone" onclick="document.getElementById('file-inp').click()">
+        <input type="file" id="file-inp" accept=".js,.txt" onchange="loadFile(event)"/>
+        <div style="font-size:28px;">📂</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:6px;">Bosing va .js fayl tanlang</div>
+        <div style="font-size:11px;color:var(--border);margin-top:3px;">.js yoki .txt qabul qilinadi</div>
       </div>
-    </div>
-  </div>
 
-  <!-- TAB: Bot kodi -->
-  <div id="tab-code" class="tab-content">
-    <div class="card">
-      <div class="card-label">Bot kodi (JavaScript / Python)</div>
-      <textarea id="bot-code" rows="14" placeholder="// Bot kodingizni shu yerga kiriting...
+      <div class="card-label">Yoki quyida to'g'ridan yozing:</div>
+      <textarea id="bot-code" rows="14" placeholder="// Bot kodingizni shu yerga yozing
+//
+// Mavjud funksiyalar:
+//   onMessage(fn)              — yangi xabar kelganda
+//   sendMessage(chatId, text)  — xabar yuborish
+//   log(matn)                  — logga yozish
+//   TOKEN                      — bot tokeningiz
+//   CHAT_ID                    — config dagi chat id
+//
 // Misol:
-// const bot = new TelegramBot(token, { polling: true });
-// bot.on('message', (msg) => {
-//   bot.sendMessage(msg.chat.id, 'Salom!');
+// onMessage(async (update) => {
+//   const msg = update.message;
+//   if (!msg || !msg.text) return;
+//   await sendMessage(msg.chat.id, 'Siz: ' + msg.text);
 // });"></textarea>
-      <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <button class="btn btn-save" onclick="saveField('bot-code','toast-code')">Saqlash</button>
-        <button class="btn btn-save" onclick="exportCode()">⬇ Yuklab olish</button>
+
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-green" id="run-btn" onclick="runBot()">▶ Botni ishga tushirish</button>
+        <button class="btn btn-red" id="stop-btn" onclick="stopBot()" style="display:none;">■ To'xtatish</button>
+        <button class="btn btn-ghost" onclick="saveCode()">💾 Saqlash</button>
+        <button class="btn btn-blue" onclick="loadExample()">📋 Namuna</button>
         <span class="toast" id="toast-code">✓ Saqlandi</span>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-label">Bot logi</div>
+      <div class="log-box" id="bot-log"><span class="l-muted">// Bot ishga tushirilmagan...</span></div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-ghost" onclick="clearLog('bot-log')">Tozalash</button>
+      </div>
+    </div>
   </div>
 
-  <!-- TAB: Polling -->
+  <!-- TOKEN TAB -->
+  <div id="tab-token" class="tab-content">
+    <div class="card">
+      <div class="card-label">Bot Token (@BotFather dan)</div>
+      <input class="inp inp-full" type="text" id="cfg-token" placeholder="1234567890:AAFxxxxxxxxxxxxxxxxxxxxxxxxx" style="margin-bottom:14px;" autocomplete="off"/>
+
+      <div class="card-label">Chat ID (ixtiyoriy)</div>
+      <input class="inp inp-full" type="text" id="cfg-chatid" placeholder="123456789" style="margin-bottom:14px;"/>
+
+      <div class="card-label">Polling interval (soniya)</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <input class="inp inp-sm" type="number" id="cfg-interval" value="2" min="1" max="60"/>
+        <span style="font-size:12px;color:var(--muted);font-family:var(--mono);">soniyada bir tekshiradi</span>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-ghost" onclick="saveCfg()">💾 Saqlash</button>
+        <button class="btn btn-blue" onclick="testToken()">🔍 Tokenni tekshirish</button>
+        <span class="toast" id="toast-cfg">✓ Saqlandi</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Tekshiruv natijasi</div>
+      <div class="log-box" id="token-log" style="min-height:80px;"><span class="l-muted">// Hali tekshirilmagan</span></div>
+    </div>
+  </div>
+
+  <!-- POLLING TAB -->
   <div id="tab-polling" class="tab-content">
     <div class="metrics">
-      <div class="metric">
-        <div class="metric-lbl">Jami so'rovlar</div>
-        <div class="metric-val" id="m-total">0</div>
-      </div>
-      <div class="metric">
-        <div class="metric-lbl">Muvaffaqiyatli</div>
-        <div class="metric-val green" id="m-ok">0</div>
-      </div>
-      <div class="metric">
-        <div class="metric-lbl">Xatoliklar</div>
-        <div class="metric-val red" id="m-err">0</div>
-      </div>
+      <div class="metric"><div class="metric-lbl">Jami so'rovlar</div><div class="metric-val" id="m-total">0</div></div>
+      <div class="metric"><div class="metric-lbl">Muvaffaqiyatli</div><div class="metric-val green" id="m-ok">0</div></div>
+      <div class="metric"><div class="metric-lbl">Xatoliklar</div><div class="metric-val red" id="m-err">0</div></div>
+      <div class="metric"><div class="metric-lbl">Xabarlar</div><div class="metric-val blue" id="m-proc">0</div></div>
     </div>
 
     <div class="card">
-      <div class="card-label">Polling sozlamalari</div>
-
-      <div style="margin-bottom:10px;">
-        <div class="card-label" style="margin-bottom:6px;">So'rov URL manzili</div>
-        <div class="url-row">
-          <input type="text" id="poll-url" value="https://api.telegram.org/bot" placeholder="https://api.telegram.org/bot{TOKEN}/getUpdates" />
-        </div>
-      </div>
-
-      <div class="interval-row">
-        <label>Interval (soniya):</label>
-        <input type="number" id="poll-interval" value="5" min="1" max="600" />
-        <label>Method:</label>
-        <select id="poll-method" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;">
-          <option>GET</option>
-          <option>POST</option>
-        </select>
-      </div>
-
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <button class="btn btn-start" id="btn-start" onclick="startPolling()">▶ Boshlash</button>
-        <button class="btn btn-stop" id="btn-stop" onclick="stopPolling()" style="display:none;">■ To'xtatish</button>
-        <span class="pill" id="status-pill" style="border:1px solid rgba(248,113,113,0.3);" class="status-stopped">
-          <span id="status-dot" style="width:6px;height:6px;border-radius:50%;background:var(--danger);display:inline-block;"></span>
-          &nbsp;<span id="status-text">To'xtatilgan</span>
-        </span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">So'rovlar logi</div>
-      <div class="log-box" id="poll-log">
-        <span class="log-line">// Polling hali boshlanmagan. "Boshlash" tugmasini bosing.</span>
-      </div>
-      <div style="margin-top:10px; display:flex; gap:10px;">
-        <button class="btn btn-save" onclick="clearLog()">Logni tozalash</button>
-        <button class="btn btn-save" onclick="exportLog()">⬇ Logni saqlash</button>
+      <div class="card-label">Polling logi</div>
+      <div class="log-box" id="poll-log"><span class="l-muted">// Polling hali boshlanmagan</span></div>
+      <div style="margin-top:10px;display:flex;gap:10px;">
+        <button class="btn btn-ghost" onclick="clearLog('poll-log')">Tozalash</button>
+        <button class="btn btn-ghost" onclick="exportLog()">⬇ Saqlash</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  const CREDS = { user: 'admin', pass: '18092010' };
-  let pollTimer = null;
-  let total = 0, ok = 0, errors = 0;
+// ── Auth ──
+const CREDS = {user:'admin', pass:'18092010'};
 
-  // ─── Login ───
-  function doLogin() {
-    const u = document.getElementById('username').value.trim();
-    const p = document.getElementById('password').value;
-    if (u === CREDS.user && p === CREDS.pass) {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('panel').style.display = 'block';
-      loadAll();
-    } else {
-      document.getElementById('err-msg').textContent = '✗ Login yoki parol noto\'g\'ri!';
-    }
+function doLogin() {
+  const u = document.getElementById('un').value.trim();
+  const p = document.getElementById('pw').value;
+  if (u === CREDS.user && p === CREDS.pass) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('panel').style.display = 'block';
+    loadAll();
+  } else {
+    document.getElementById('err-msg').textContent = '✗ Login yoki parol noto\'g\'ri!';
   }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+});
+function doLogout() {
+  stopBot();
+  document.getElementById('panel').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('un').value = '';
+  document.getElementById('pw').value = '';
+  document.getElementById('err-msg').textContent = '';
+}
 
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      if (document.getElementById('login-screen').style.display !== 'none') doLogin();
-    }
+// ── Tabs ──
+function sw(name) {
+  const names = ['bot','token','polling'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
+  names.forEach(n => {
+    const el = document.getElementById('tab-'+n);
+    if (el) el.classList.toggle('active', n===name);
   });
+}
 
-  function doLogout() {
-    stopPolling();
-    document.getElementById('panel').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-    document.getElementById('err-msg').textContent = '';
+// ── Save/Load ──
+function saveCode() {
+  try { localStorage.setItem('bap_code', document.getElementById('bot-code').value); } catch(e){}
+  showToast('toast-code');
+}
+function saveCfg() {
+  try {
+    localStorage.setItem('bap_token', document.getElementById('cfg-token').value.trim());
+    localStorage.setItem('bap_chatid', document.getElementById('cfg-chatid').value.trim());
+    localStorage.setItem('bap_interval', document.getElementById('cfg-interval').value);
+  } catch(e){}
+  showToast('toast-cfg');
+}
+function loadAll() {
+  try {
+    const c = localStorage.getItem('bap_code'); if(c) document.getElementById('bot-code').value = c;
+    const t = localStorage.getItem('bap_token'); if(t) document.getElementById('cfg-token').value = t;
+    const ci = localStorage.getItem('bap_chatid'); if(ci) document.getElementById('cfg-chatid').value = ci;
+    const iv = localStorage.getItem('bap_interval'); if(iv) document.getElementById('cfg-interval').value = iv;
+  } catch(e){}
+}
+function showToast(id) {
+  const t = document.getElementById(id);
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ── File upload ──
+function loadFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('bot-code').value = e.target.result;
+    addLog('bot-log', '📂 Fayl yuklandi: ' + file.name, 'l-info');
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ── Example ──
+function loadExample() {
+  document.getElementById('bot-code').value =
+`// ══ Namuna bot ══
+// /start — salomlashadi
+// /help  — yordam
+// Boshqa xabar — takrorlaydi
+
+onMessage(async (update) => {
+  const msg = update.message;
+  if (!msg || !msg.text) return;
+
+  const chatId = msg.chat.id;
+  const text   = msg.text;
+  const name   = msg.from.first_name || 'Do\\'st';
+
+  log('Xabar keldi: ' + text + ' (' + chatId + ')');
+
+  if (text === '/start') {
+    await sendMessage(chatId, '👋 Salom, ' + name + '!\\nMen botman. /help yozing.');
+  } else if (text === '/help') {
+    await sendMessage(chatId, '📋 Buyruqlar:\\n/start — boshlash\\n/help — yordam\\nBoshqa — takrorlash');
+  } else {
+    await sendMessage(chatId, '🔁 ' + text);
   }
+});`;
+  addLog('bot-log', '📋 Namuna kod yuklandi', 'l-info');
+}
 
-  // ─── Tabs ───
-  function switchTab(name) {
-    const tabs = ['data', 'code', 'polling'];
-    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', tabs[i] === name));
-    tabs.forEach(n => {
-      const el = document.getElementById('tab-' + n);
-      if (el) el.classList.toggle('active', n === name);
-    });
-  }
+// ── Log helpers ──
+function addLog(boxId, msg, cls) {
+  const box = document.getElementById(boxId);
+  if (box.children.length === 1 && box.children[0].textContent.startsWith('//')) box.innerHTML = '';
+  const now = new Date().toTimeString().slice(0,8);
+  const line = document.createElement('div');
+  line.className = cls || 'l-muted';
+  line.textContent = '[' + now + '] ' + msg;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+function clearLog(id) {
+  document.getElementById(id).innerHTML = '<span class="l-muted">// Log tozalandi</span>';
+}
+function exportLog() {
+  const lines = Array.from(document.getElementById('poll-log').children).map(l=>l.textContent).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines],{type:'text/plain'}));
+  a.download = 'bot_log.txt'; a.click();
+}
 
-  // ─── Save / Load ───
-  function saveField(id, toastId) {
-    try { localStorage.setItem('bap_' + id, document.getElementById(id).value); } catch(e) {}
-    const t = document.getElementById(toastId);
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
-  }
-
-  function loadAll() {
-    ['bot-data', 'bot-config', 'bot-code'].forEach(id => {
-      try {
-        const v = localStorage.getItem('bap_' + id);
-        if (v !== null) document.getElementById(id).value = v;
-      } catch(e) {}
-    });
-    try {
-      const u = localStorage.getItem('bap_poll-url');
-      if (u) document.getElementById('poll-url').value = u;
-    } catch(e) {}
-  }
-
-  // ─── Export code ───
-  function exportCode() {
-    const code = document.getElementById('bot-code').value;
-    const blob = new Blob([code], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'bot_code.js';
-    a.click();
-  }
-
-  // ─── Polling ───
-  function addLog(msg, type) {
-    const box = document.getElementById('poll-log');
-    const now = new Date();
-    const t = now.toTimeString().slice(0, 8);
-    const line = document.createElement('div');
-    line.className = 'log-' + (type || 'line');
-    line.textContent = '[' + t + '] ' + msg;
-    if (box.children.length === 1 && box.children[0].textContent.startsWith('//')) {
-      box.innerHTML = '';
+// ── Token test ──
+async function testToken() {
+  const token = document.getElementById('cfg-token').value.trim();
+  if (!token) { addLog('token-log','❌ Token kiritilmagan!','l-err'); return; }
+  addLog('token-log','⏳ Tekshirilmoqda...','l-warn');
+  try {
+    const r = await fetch('https://api.telegram.org/bot' + token + '/getMe');
+    const d = await r.json();
+    if (d.ok) {
+      const b = d.result;
+      addLog('token-log', '✓ Token to\'g\'ri!', 'l-ok');
+      addLog('token-log', '🤖 @' + b.username + ' — ' + b.first_name, 'l-ok');
+      addLog('token-log', '🆔 Bot ID: ' + b.id, 'l-info');
+    } else {
+      addLog('token-log', '✗ ' + d.description, 'l-err');
     }
-    box.appendChild(line);
-    box.scrollTop = box.scrollHeight;
+  } catch(e) {
+    addLog('token-log', '✗ Ulanib bo\'lmadi: ' + e.message, 'l-err');
+  }
+}
+
+// ══════════════════════════════════
+//  BOT ENGINE
+// ══════════════════════════════════
+let botRunning = false;
+let pollTimer  = null;
+let offset = 0;
+let total = 0, okC = 0, errC = 0, procC = 0;
+let userHandler = null;
+
+// Foydalanuvchi kodida ishlatiladigan funksiyalar
+function onMessage(fn)  { userHandler = fn; addLog('bot-log','✓ onMessage handler tayyor','l-ok'); }
+
+function log(text) { addLog('bot-log', '📝 ' + text, 'l-bot'); }
+
+async function sendMessage(chatId, text) {
+  const token = document.getElementById('cfg-token').value.trim();
+  if (!token) { addLog('bot-log','❌ Token yo\'q!','l-err'); return; }
+  try {
+    const r = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({chat_id: chatId, text: text})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      addLog('bot-log', '✉ Yuborildi → ' + chatId + ': ' + String(text).slice(0,60), 'l-ok');
+    } else {
+      addLog('bot-log', '✗ ' + d.description, 'l-err');
+    }
+  } catch(e) {
+    addLog('bot-log', '✗ sendMessage: ' + e.message, 'l-err');
+  }
+}
+
+function setBotUI(running) {
+  botRunning = running;
+  document.getElementById('run-btn').style.display  = running ? 'none' : 'inline-block';
+  document.getElementById('stop-btn').style.display = running ? 'inline-block' : 'none';
+  const banner = document.getElementById('bot-banner');
+  const top    = document.getElementById('bot-status-top');
+  if (running) {
+    banner.className = 'bot-banner';
+    banner.innerHTML = '<span style="animation:blink 1s infinite;display:inline-block">⬤</span>&nbsp;Bot ishlayapti — xabarlar kutilmoqda...';
+    top.style.color = 'var(--accent)';
+    top.textContent = 'Bot: ishlayapti ✓';
+  } else {
+    banner.className = 'bot-banner off';
+    banner.innerHTML = '<span>⬤</span> Bot hozir to\'xtatilgan';
+    top.style.color = 'var(--muted)';
+    top.textContent = 'Bot: to\'xtatilgan';
+  }
+}
+
+function updateM() {
+  document.getElementById('m-total').textContent = total;
+  document.getElementById('m-ok').textContent    = okC;
+  document.getElementById('m-err').textContent   = errC;
+  document.getElementById('m-proc').textContent  = procC;
+}
+
+async function runBot() {
+  const token = document.getElementById('cfg-token').value.trim();
+  if (!token) {
+    addLog('bot-log','❌ Avval "Token / Config" tabiga token kiriting!','l-err');
+    sw('token'); return;
+  }
+  const code = document.getElementById('bot-code').value.trim();
+  if (!code) {
+    addLog('bot-log','❌ Bot kodi bo\'sh! Kod yozing yoki fayl yuklang.','l-err');
+    return;
   }
 
-  async function doPoll() {
-    const url = document.getElementById('poll-url').value.trim();
-    const method = document.getElementById('poll-method').value;
-    if (!url) { addLog('URL bo\'sh! Avval URL kiriting.', 'warn'); return; }
+  // Reset
+  userHandler = null;
+  offset = 0; total = 0; okC = 0; errC = 0; procC = 0;
+  updateM();
 
-    total++;
-    document.getElementById('m-total').textContent = total;
+  addLog('bot-log','⚙ Kod yuklanmoqda...','l-warn');
+  try {
+    // Foydalanuvchi kodini ishlatish
+    const fn = new Function('onMessage','sendMessage','log','TOKEN','CHAT_ID', code);
+    fn(onMessage, sendMessage, log,
+       token,
+       document.getElementById('cfg-chatid').value.trim());
+    addLog('bot-log','✓ Kod muvaffaqiyatli yuklandi','l-ok');
+  } catch(e) {
+    addLog('bot-log','✗ Kod xatosi: ' + e.message,'l-err');
+    return;
+  }
 
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
-      const res = await fetch(url, { method, signal: controller.signal, mode: 'cors' });
-      clearTimeout(timeout);
+  setBotUI(true);
+  addLog('bot-log','🚀 Bot ishga tushdi!','l-ok');
+  addLog('poll-log','🚀 Polling boshlandi','l-ok');
 
-      if (res.ok) {
-        ok++;
-        document.getElementById('m-ok').textContent = ok;
-        let body = '';
-        try {
-          const json = await res.json();
-          body = JSON.stringify(json).slice(0, 120);
-        } catch(e) {
-          body = await res.text().catch(() => '');
-          body = body.slice(0, 120);
+  const ivSec = Math.max(1, parseInt(document.getElementById('cfg-interval').value)||2);
+  doPoll(token);
+  pollTimer = setInterval(() => doPoll(token), ivSec * 1000);
+}
+
+async function doPoll(token) {
+  total++; updateM();
+  try {
+    const r = await fetch(
+      'https://api.telegram.org/bot' + token + '/getUpdates?offset=' + offset + '&timeout=1'
+    );
+    const d = await r.json();
+    okC++; updateM();
+
+    if (d.ok && d.result && d.result.length > 0) {
+      for (const update of d.result) {
+        offset = update.update_id + 1;
+        procC++; updateM();
+
+        if (update.message) {
+          const m = update.message;
+          const who = m.from.username ? '@'+m.from.username : m.from.first_name;
+          addLog('poll-log', '💬 ' + who + ': ' + (m.text||'[media]'), 'l-info');
         }
-        addLog('✓ ' + res.status + ' ' + res.statusText + ' → ' + body, 'ok');
-      } else {
-        errors++;
-        document.getElementById('m-err').textContent = errors;
-        addLog('✗ HTTP ' + res.status + ' ' + res.statusText, 'err');
-      }
-    } catch (e) {
-      errors++;
-      document.getElementById('m-err').textContent = errors;
-      if (e.name === 'AbortError') {
-        addLog('✗ Timeout — server javob bermadi (10s)', 'err');
-      } else {
-        addLog('✗ ' + (e.message || 'So\'rov amalga oshmadi'), 'err');
+
+        if (userHandler) {
+          try { await userHandler(update); }
+          catch(e) { addLog('bot-log','✗ Handler xatosi: '+e.message,'l-err'); }
+        }
       }
     }
+  } catch(e) {
+    errC++; updateM();
+    addLog('poll-log','✗ '+e.message,'l-err');
   }
+}
 
-  function startPolling() {
-    const sec = Math.max(1, parseInt(document.getElementById('poll-interval').value) || 5);
-    try { localStorage.setItem('bap_poll-url', document.getElementById('poll-url').value); } catch(e) {}
-
-    document.getElementById('btn-start').style.display = 'none';
-    document.getElementById('btn-stop').style.display = 'inline-block';
-    const pill = document.getElementById('status-pill');
-    pill.style.border = '1px solid rgba(74,222,128,0.3)';
-    document.getElementById('status-dot').style.background = 'var(--accent)';
-    document.getElementById('status-text').textContent = 'Ishlayapti';
-
-    addLog('Polling boshlandi. Interval: ' + sec + ' s', 'warn');
-    doPoll();
-    pollTimer = setInterval(doPoll, sec * 1000);
+function stopBot() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  if (botRunning) {
+    addLog('bot-log','■ Bot to\'xtatildi','l-warn');
+    addLog('poll-log','■ Polling to\'xtatildi','l-warn');
   }
+  setBotUI(false);
+}
 
-  function stopPolling() {
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-    document.getElementById('btn-start').style.display = 'inline-block';
-    document.getElementById('btn-stop').style.display = 'none';
-    const pill = document.getElementById('status-pill');
-    pill.style.border = '1px solid rgba(248,113,113,0.3)';
-    document.getElementById('status-dot').style.background = 'var(--danger)';
-    document.getElementById('status-text').textContent = 'To\'xtatilgan';
-    addLog('Polling to\'xtatildi.', 'warn');
-  }
-
-  function clearLog() {
-    document.getElementById('poll-log').innerHTML =
-      '<span class="log-line">// Log tozalandi.</span>';
-  }
-
-  function exportLog() {
-    const lines = Array.from(document.getElementById('poll-log').children)
-      .map(l => l.textContent).join('\n');
-    const blob = new Blob([lines], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'polling_log.txt';
-    a.click();
-  }
-
-  // Sahifa yopilganda polling to'xtatiladi
-  window.addEventListener('beforeunload', stopPolling);
+window.addEventListener('beforeunload', stopBot);
 </script>
 </body>
 </html>
