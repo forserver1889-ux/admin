@@ -93,6 +93,7 @@
     background: var(--surface2);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+    flex-wrap: wrap;
   }
 
   .token-label {
@@ -106,6 +107,7 @@
 
   .token-input {
     flex: 1;
+    min-width: 200px;
     background: var(--bg);
     border: 1px solid var(--border2);
     border-radius: 8px;
@@ -118,6 +120,17 @@
   }
   .token-input:focus { border-color: var(--accent); }
   .token-input::placeholder { color: var(--text2); }
+  .token-input.has-token { border-color: rgba(52,211,153,0.4); }
+
+  .token-save-hint {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--green);
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  .token-save-hint.show { opacity: 1; }
 
   .btn {
     padding: 7px 18px;
@@ -150,6 +163,15 @@
     padding: 7px 12px;
   }
   .btn-clear:hover { color: var(--text); }
+
+  .btn-save-token {
+    background: transparent;
+    color: var(--green);
+    border: 1px solid rgba(52,211,153,0.3);
+    font-size: 12px;
+    padding: 7px 12px;
+  }
+  .btn-save-token:hover { background: rgba(52,211,153,0.08); }
 
   .main {
     display: flex;
@@ -296,6 +318,21 @@
     font-family: var(--mono);
     color: var(--accent2);
   }
+
+  /* Python mode banner */
+  .py-banner {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: rgba(251,191,36,0.08);
+    border-bottom: 1px solid rgba(251,191,36,0.2);
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--yellow);
+    flex-shrink: 0;
+  }
+  .py-banner.show { display: flex; }
 </style>
 </head>
 <body>
@@ -314,6 +351,8 @@
 <div class="token-bar">
   <span class="token-label">Token:</span>
   <input class="token-input" id="tokenInput" type="password" placeholder="123456789:ABCDEFGHIJKLMNabcdefghijklmn...">
+  <button class="btn btn-save-token" onclick="saveToken()" title="Tokenni saqlash">💾 Saqlash</button>
+  <span class="token-save-hint" id="tokenSaveHint">✓ Saqlandi</span>
   <button class="btn btn-start" id="btnStart" onclick="startBot()">▶ Ishga tushir</button>
   <button class="btn btn-stop" id="btnStop" onclick="stopBot()" style="display:none">■ To'xtat</button>
 </div>
@@ -321,13 +360,20 @@
 <div class="main">
   <div class="editor-panel">
     <div class="panel-header">
-      <span class="panel-title">Bot kodi (JavaScript)</span>
-      <span class="tab">bot.js</span>
+      <span class="panel-title">Bot kodi (JavaScript yoki Python)</span>
+      <span class="tab" id="editorTabLabel">bot.js</span>
+    </div>
+
+    <div class="py-banner" id="pyBanner">
+      ⚠ Python kodi aniqlandi — avtomatik JavaScript ga o'giriladi. Import qatorlari o'chiriladi.
     </div>
 
     <textarea id="editor" spellcheck="false" placeholder="// Bot kodingizni shu yerga yozing...
 // Majburiy: handleUpdate(update) funksiyasi bo'lishi kerak
-// Tayyor namunalardan birini pastdan tanlang"></textarea>
+// Tayyor namunalardan birini pastdan tanlang
+//
+// Kodda TOKEN = '...' yoki BOT_TOKEN = '...' yozilsa,
+// u avtomatik ishlatiladi — alohida kiritish shart emas."></textarea>
 
     <div class="examples-wrap">
       <span class="panel-title">Namuna:</span>
@@ -337,6 +383,7 @@
         <option value="commands">Buyruqlar bilan bot</option>
         <option value="inline">Inline tugmalar</option>
         <option value="weather">Ob-havo boti (API)</option>
+        <option value="python_echo">Python-style echo bot</option>
       </select>
     </div>
   </div>
@@ -358,14 +405,16 @@
       <div class="guide-title">⚠ Qanday ishlaydi</div>
       <div class="guide-step"><span>1.</span><span>Token — @BotFather dan oling</span></div>
       <div class="guide-step"><span>2.</span><span>Kod yozing yoki namuna tanlang</span></div>
-      <div class="guide-step"><span>3.</span><span>▶ Ishga tushir tugmasini bosing</span></div>
-      <div class="guide-step"><span>4.</span><span>Sayt ochiq turganida bot ishlaydi</span></div>
-      <div class="proxy-note">ℹ Polling usuli ishlatiladi — server yoki webhook shart emas. Sayt yopilsa bot to'xtaydi.</div>
+      <div class="guide-step"><span>3.</span><span>TOKEN = '...' kodda bo'lsa avtomatik ishlatiladi</span></div>
+      <div class="guide-step"><span>4.</span><span>▶ Ishga tushir tugmasini bosing</span></div>
+      <div class="guide-step"><span>5.</span><span>Sayt ochiq turganida bot ishlaydi</span></div>
+      <div class="proxy-note">ℹ Polling usuli ishlatiladi — server yoki webhook shart emas. Python import satrlari avtomatik o'tkazib yuboriladi.</div>
     </div>
   </div>
 </div>
 
 <script>
+// ─── EXAMPLES ────────────────────────────────────────────────────────────────
 const EXAMPLES = {
   echo: `// Echo bot — barcha xabarlarni qaytaradi
 async function handleUpdate(update) {
@@ -454,21 +503,283 @@ async function handleUpdate(update) {
   } catch(e) {
     await sendMessage(chatId, "Kechirasiz, xatolik yuz berdi. Shahar nomini tekshiring.");
   }
-}`
+}`,
+
+  python_echo: `# Python-style echo bot (avtomatik JS ga o'giriladi)
+import logging
+import os
+import json
+import asyncio
+import urllib.parse
+import time
+from telegram import (
+    Update, InlineKeyboardButton, InlineKeyboardMarkup,
+    ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove,
+    WebAppInfo
+)
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+
+TOKEN = "123456789:YOUR_BOT_TOKEN_HERE"
+BOT_TOKEN = TOKEN
+
+async def handleUpdate(update):
+    msg = update.get("message")
+    if not msg:
+        return
+    text = msg.get("text", "")
+    chat_id = msg["chat"]["id"]
+    if text == "/start":
+        await sendMessage(chat_id, "Salom! Men Python-style botman.")
+    else:
+        await sendMessage(chat_id, "Echo: " + text)
+`
 };
 
+// ─── STATE ────────────────────────────────────────────────────────────────────
 let isRunning = false;
 let pollingInterval = null;
 let lastUpdateId = 0;
 let token = "";
 let userHandleUpdate = async () => {};
 
+// ─── TOKEN PERSISTENCE ────────────────────────────────────────────────────────
+const TOKEN_KEY = "botrunner_token";
+
+function loadSavedToken() {
+  try {
+    const saved = localStorage.getItem(TOKEN_KEY);
+    if (saved) {
+      document.getElementById("tokenInput").value = saved;
+      document.getElementById("tokenInput").classList.add("has-token");
+      log("sys", "Saqlangan token yuklandi.");
+    }
+  } catch(e) {}
+}
+
+function saveToken() {
+  const val = document.getElementById("tokenInput").value.trim();
+  if (!val) { log("err", "Token bo'sh — saqlanmadi."); return; }
+  try {
+    localStorage.setItem(TOKEN_KEY, val);
+    document.getElementById("tokenInput").classList.add("has-token");
+    const hint = document.getElementById("tokenSaveHint");
+    hint.classList.add("show");
+    setTimeout(() => hint.classList.remove("show"), 2000);
+    log("sys", "Token saqlandi (localStorage).");
+  } catch(e) {
+    log("err", "Saqlashda xatolik: " + e.message);
+  }
+}
+
+// Auto-save token on input change (debounced)
+let tokenSaveTimer = null;
+document.addEventListener("DOMContentLoaded", () => {
+  loadSavedToken();
+  document.getElementById("tokenInput").addEventListener("input", () => {
+    clearTimeout(tokenSaveTimer);
+    tokenSaveTimer = setTimeout(() => {
+      const val = document.getElementById("tokenInput").value.trim();
+      if (val.length > 10) {
+        try { localStorage.setItem(TOKEN_KEY, val); } catch(e) {}
+        document.getElementById("tokenInput").classList.toggle("has-token", !!val);
+      }
+    }, 800);
+  });
+
+  // Auto-detect token in code
+  document.getElementById("editor").addEventListener("input", detectPythonAndToken);
+});
+
+// ─── PYTHON CODE PREPROCESSOR ─────────────────────────────────────────────────
+/**
+ * Strips Python imports and converts basic Python-style bot code to runnable JS.
+ * Handles: import X, from X import Y, # comments, basic async def handleUpdate syntax.
+ * Extracts TOKEN / BOT_TOKEN if defined in code.
+ */
+function preprocessCode(raw) {
+  let lines = raw.split("\n");
+  let isPython = false;
+  let extractedToken = null;
+  let output = [];
+  let inMultilineImport = false;
+
+  // Detect Python by presence of import lines or def keyword
+  const pythonSignals = lines.some(l =>
+    /^\s*(import |from .+ import|def |async def |#)/.test(l.trim())
+  );
+  if (pythonSignals) isPython = true;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    let trimmed = line.trim();
+
+    // Handle multi-line imports: from telegram import (...)
+    if (inMultilineImport) {
+      if (trimmed.endsWith(")") || trimmed.endsWith(",)")) {
+        inMultilineImport = false;
+      }
+      // skip line
+      continue;
+    }
+
+    // Skip Python import lines
+    if (/^import\s+\S/.test(trimmed) || /^from\s+\S+\s+import/.test(trimmed)) {
+      if (trimmed.includes("(") && !trimmed.includes(")")) {
+        inMultilineImport = true;
+      }
+      continue;
+    }
+
+    // Extract TOKEN / BOT_TOKEN from Python assignment
+    const tokenMatch = trimmed.match(/^(?:BOT_)?TOKEN\s*=\s*["']([^"']+)["']/);
+    if (tokenMatch) {
+      extractedToken = tokenMatch[1];
+      // Keep as JS const for reference (won't break anything)
+      output.push(line.replace(/^(\s*)(?:BOT_)?TOKEN\s*=\s*["']([^"']*)["']/, '$1var _EXTRACTED_TOKEN = "$2";'));
+      continue;
+    }
+
+    // Convert Python comments (#) to JS comments (//) — only lines that START with #
+    if (/^#/.test(trimmed)) {
+      output.push(line.replace(/^(\s*)#/, "$1//"));
+      continue;
+    }
+
+    // Convert Python async def handleUpdate(update): → async function handleUpdate(update) {
+    if (/^async\s+def\s+handleUpdate/.test(trimmed)) {
+      output.push(line.replace(/async\s+def\s+(\w+)\s*\(([^)]*)\)\s*:/, "async function $1($2) {"));
+      continue;
+    }
+
+    // Convert Python async def someFunc(args): → async function someFunc(args) {
+    if (/^async\s+def\s+/.test(trimmed)) {
+      output.push(line.replace(/async\s+def\s+(\w+)\s*\(([^)]*)\)\s*:/, "async function $1($2) {"));
+      continue;
+    }
+
+    // Convert Python def func(args): → function func(args) {
+    if (/^def\s+/.test(trimmed)) {
+      output.push(line.replace(/def\s+(\w+)\s*\(([^)]*)\)\s*:/, "function $1($2) {"));
+      continue;
+    }
+
+    // Convert Python if/elif/else/for/while blocks
+    if (/^(if|elif|else|for|while)\b/.test(trimmed)) {
+      // elif → else if
+      let converted = line
+        .replace(/\belif\b/, "} else if")
+        .replace(/\belse\s*:/, "} else {")
+        .replace(/^(\s*)(if\s*.+):$/, "$1$2 {")
+        .replace(/^(\s*)(for\s*.+):$/, "$1$2 {")
+        .replace(/^(\s*)(while\s*.+):$/, "$1$2 {")
+        .replace(/^(\s*)(} else if\s*.+):$/, "$1$2 {");
+      output.push(converted);
+      continue;
+    }
+
+    // Convert Python try/except/finally
+    if (/^try\s*:/.test(trimmed)) { output.push(line.replace(/try\s*:/, "try {")); continue; }
+    if (/^except\b/.test(trimmed)) {
+      output.push(line.replace(/except\s+(\w+)\s+as\s+(\w+)\s*:/, "} catch($2) {")
+                      .replace(/except\s*:/, "} catch(e) {")
+                      .replace(/except\s+(\w+)\s*:/, "} catch(e) {"));
+      continue;
+    }
+    if (/^finally\s*:/.test(trimmed)) { output.push(line.replace(/finally\s*:/, "finally {")); continue; }
+
+    // Convert Python return / await (these are same in JS, keep)
+    // Convert Python .get() dict access pattern: msg.get("text", "")
+    // (JS objects don't have .get but we can keep it and add a helper)
+
+    // Convert Python f-strings: f"...{var}..." → `...${var}...`
+    line = line.replace(/f"([^"]*)"/g, (_, content) => {
+      return '`' + content.replace(/\{([^}]+)\}/g, '${$1}') + '`';
+    });
+    line = line.replace(/f'([^']*)'/g, (_, content) => {
+      return '`' + content.replace(/\{([^}]+)\}/g, '${$1}') + '`';
+    });
+
+    // Convert Python print() → console.log() / log()
+    line = line.replace(/\bprint\s*\(/, "console.log(");
+
+    // Convert Python None/True/False → null/true/false
+    line = line.replace(/\bNone\b/g, "null");
+    line = line.replace(/\bTrue\b/g, "true");
+    line = line.replace(/\bFalse\b/g, "false");
+
+    // Convert Python not keyword
+    line = line.replace(/\bnot\s+/g, "!");
+
+    // Python dict/list .get() support is handled via helper below
+    output.push(line);
+  }
+
+  // If Python code detected, we need to close open function blocks
+  // Simple heuristic: add closing braces at end if Python
+  let jsCode = output.join("\n");
+
+  if (isPython) {
+    // Inject a small .get() polyfill at the top
+    const polyfill = `
+// Auto-injected Python compatibility helpers
+if (typeof Object.prototype.get !== "function") {
+  Object.defineProperty(Object.prototype, "get", {
+    value: function(key, def) {
+      return (this[key] !== undefined && this[key] !== null) ? this[key] : (def !== undefined ? def : null);
+    },
+    writable: true, configurable: true, enumerable: false
+  });
+}
+`;
+    jsCode = polyfill + "\n" + jsCode;
+
+    // Count opening { vs closing } and add missing ones
+    const opens = (jsCode.match(/\{/g) || []).length;
+    const closes = (jsCode.match(/\}/g) || []).length;
+    const diff = opens - closes;
+    if (diff > 0) {
+      jsCode += "\n" + "}\n".repeat(diff);
+    }
+  }
+
+  return { jsCode, extractedToken, isPython };
+}
+
+// ─── TOKEN AUTO-DETECT FROM CODE ──────────────────────────────────────────────
+function detectPythonAndToken() {
+  const code = document.getElementById("editor").value;
+  const lines = code.split("\n");
+
+  // Detect Python imports
+  const hasPythonImports = lines.some(l => /^\s*(import |from .+ import)/.test(l));
+  document.getElementById("pyBanner").classList.toggle("show", hasPythonImports);
+  document.getElementById("editorTabLabel").textContent = hasPythonImports ? "bot.py → js" : "bot.js";
+
+  // Extract inline token from code
+  for (const line of lines) {
+    const m = line.match(/(?:BOT_)?TOKEN\s*=\s*["']([^"']{10,})["']/);
+    if (m && m[1] && m[1] !== "YOUR_BOT_TOKEN_HERE" && !m[1].includes("...")) {
+      const currentInput = document.getElementById("tokenInput").value.trim();
+      if (!currentInput || currentInput !== m[1]) {
+        document.getElementById("tokenInput").value = m[1];
+        document.getElementById("tokenInput").classList.add("has-token");
+        try { localStorage.setItem(TOKEN_KEY, m[1]); } catch(e) {}
+        log("sys", "Koddan token aniqlandi va o'rnatildi.");
+      }
+      break;
+    }
+  }
+}
+
+// ─── EXAMPLES ─────────────────────────────────────────────────────────────────
 function loadExample(key) {
   if (!key) return;
   document.getElementById("editor").value = EXAMPLES[key];
+  detectPythonAndToken();
   log("sys", "Namuna yuklandi: " + key);
 }
 
+// ─── LOGGING ──────────────────────────────────────────────────────────────────
 function log(type, msg) {
   const logEl = document.getElementById("log");
   const time = new Date().toTimeString().split(" ")[0];
@@ -494,6 +805,7 @@ function setStatus(state) {
   text.textContent = state === "running" ? "Ishlayapti" : state === "error" ? "Xatolik" : "To'xtatilgan";
 }
 
+// ─── TELEGRAM API ─────────────────────────────────────────────────────────────
 async function tgRequest(method, params = {}) {
   const resp = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
@@ -503,10 +815,10 @@ async function tgRequest(method, params = {}) {
   return resp.json();
 }
 
-async function sendMessage(chatId, text) {
-  const res = await tgRequest("sendMessage", {chat_id: chatId, text});
+async function sendMessage(chatId, text, extra = {}) {
+  const res = await tgRequest("sendMessage", {chat_id: chatId, text, ...extra});
   if (res.ok) {
-    log("msg", "→ [" + chatId + "] " + String(text).substring(0, 80) + (text.length > 80 ? "..." : ""));
+    log("msg", "→ [" + chatId + "] " + String(text).substring(0, 80) + (String(text).length > 80 ? "..." : ""));
   } else {
     log("err", "sendMessage xatolik: " + (res.description || "?"));
   }
@@ -517,6 +829,7 @@ async function tgAPI(method, params) {
   return tgRequest(method, params);
 }
 
+// ─── POLLING ──────────────────────────────────────────────────────────────────
 async function poll() {
   try {
     const res = await tgRequest("getUpdates", {
@@ -550,22 +863,59 @@ async function poll() {
   }
 }
 
+// ─── START / STOP ─────────────────────────────────────────────────────────────
 async function startBot() {
+  // Determine token: UI input takes priority, then localStorage
   token = document.getElementById("tokenInput").value.trim();
-  if (!token) { log("err", "Token kiriting!"); return; }
+  if (!token) {
+    try { token = localStorage.getItem(TOKEN_KEY) || ""; } catch(e) {}
+  }
+  if (!token) {
+    log("err", "Token kiriting yoki kodda TOKEN = '...' qatorini yozing!");
+    return;
+  }
 
-  const code = document.getElementById("editor").value.trim();
-  if (!code) { log("err", "Bot kodi bo'sh!"); return; }
+  const rawCode = document.getElementById("editor").value.trim();
+  if (!rawCode) { log("err", "Bot kodi bo'sh!"); return; }
 
+  // Preprocess (strip Python imports, extract inline token)
+  const { jsCode, extractedToken, isPython } = preprocessCode(rawCode);
+
+  // If token found in code and UI is empty, use it
+  if (extractedToken && !document.getElementById("tokenInput").value.trim()) {
+    token = extractedToken;
+    document.getElementById("tokenInput").value = extractedToken;
+    document.getElementById("tokenInput").classList.add("has-token");
+    try { localStorage.setItem(TOKEN_KEY, extractedToken); } catch(e) {}
+    log("sys", "Kod ichidan token olindi: " + extractedToken.substring(0, 12) + "...");
+  }
+
+  if (!token) {
+    log("err", "Token topilmadi! Token kiriting.");
+    return;
+  }
+
+  if (isPython) {
+    log("sys", "Python kodi aniqlandi — JavaScript ga o'girilmoqda...");
+  }
+
+  // Compile the code
   try {
-    const fn = new Function("sendMessage", "tgAPI", code + "\nreturn handleUpdate;");
-    userHandleUpdate = fn(sendMessage, tgAPI);
-    if (typeof userHandleUpdate !== "function") {
+    // Wrap in IIFE to avoid global pollution, expose handleUpdate
+    const wrappedCode = jsCode + "\nreturn typeof handleUpdate !== 'undefined' ? handleUpdate : null;";
+    const fn = new Function("sendMessage", "tgAPI", "log", wrappedCode);
+    const handler = fn(sendMessage, tgAPI, log);
+    if (typeof handler !== "function") {
       log("err", "Kodda handleUpdate(update) funksiyasi topilmadi!");
+      if (isPython) log("err", "Python kodda: async def handleUpdate(update): bo'lishi kerak");
       return;
     }
+    userHandleUpdate = handler;
   } catch(e) {
-    log("err", "Kod sintaksis xatoligi: " + e.message);
+    log("err", "Kod xatoligi: " + e.message);
+    if (isPython) {
+      log("err", "Python → JS o'tkazishda muammo bo'lishi mumkin. Sintaksisni tekshiring.");
+    }
     return;
   }
 
