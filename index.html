@@ -306,9 +306,9 @@ function parsePythonBot(code) {
   const lines = code.split("\n");
   let extractedToken = null;
 
-  // Extract TOKEN
+  // Extract TOKEN — must match real Telegram bot token format: digits:alphanum
   for (const line of lines) {
-    const m = line.match(/(?:BOT_)?TOKEN\s*=\s*["']([^"']{10,})["']/);
+    const m = line.match(/(?:BOT_)?TOKEN\s*=\s*["'](\d{8,12}:[A-Za-z0-9_-]{30,})["']/);
     if (m && m[1] && !m[1].includes("YOUR_TOKEN") && !m[1].includes("...")) {
       extractedToken = m[1];
       break;
@@ -409,17 +409,20 @@ function parsePythonBot(code) {
       raw = raw.replace(/\basync\s+def\s+(\w+)\s*\(([^)]*)\)\s*:/, "async function $1($2) {");
       raw = raw.replace(/\bdef\s+(\w+)\s*\(([^)]*)\)\s*:/, "function $1($2) {");
 
-      // Control flow
-      raw = raw.replace(/\belif\b(.+?):$/, (_, c) => `} else if (${c.trim()}) {`);
-      raw = raw.replace(/\belse\s*:$/, "} else {");
-      raw = raw.replace(/^(\s*)if\b(.+?):$/, (_, sp, c) => `${sp}if (${c.trim()}) {`);
-      raw = raw.replace(/^(\s*)for\b(.+?):$/, (_, sp, c) => `${sp}for (${c.trim()}) {`);
-      raw = raw.replace(/^(\s*)while\b(.+?):$/, (_, sp, c) => `${sp}while (${c.trim()}) {`);
-      raw = raw.replace(/\btry\s*:$/, "try {");
-      raw = raw.replace(/\bexcept\s+(\w+)\s+as\s+(\w+)\s*:/, "} catch($2) {");
-      raw = raw.replace(/\bexcept\s+\w+\s*:/, "} catch(e) {");
-      raw = raw.replace(/\bexcept\s*:/, "} catch(e) {");
-      raw = raw.replace(/\bfinally\s*:/, "finally {");
+      // Control flow — only replace trailing colon when it's actually a control flow statement
+      // (not variable assignments like TOKEN = "abc:def" or dict literals)
+      if (!/^\s*\w+\s*=/.test(raw)) {
+        raw = raw.replace(/\belif\b(.+?):$/, (_, c) => `} else if (${c.trim()}) {`);
+        raw = raw.replace(/\belse\s*:$/, "} else {");
+        raw = raw.replace(/^(\s*)if\b(.+?):$/, (_, sp, c) => `${sp}if (${c.trim()}) {`);
+        raw = raw.replace(/^(\s*)for\b(.+?):$/, (_, sp, c) => `${sp}for (${c.trim()}) {`);
+        raw = raw.replace(/^(\s*)while\b(.+?):$/, (_, sp, c) => `${sp}while (${c.trim()}) {`);
+        raw = raw.replace(/\btry\s*:$/, "try {");
+        raw = raw.replace(/\bexcept\s+(\w+)\s+as\s+(\w+)\s*:/, "} catch($2) {");
+        raw = raw.replace(/\bexcept\s+\w+\s*:/, "} catch(e) {");
+        raw = raw.replace(/\bexcept\s*:/, "} catch(e) {");
+        raw = raw.replace(/\bfinally\s*:/, "finally {");
+      }
 
       // f-strings
       raw = raw.replace(/f"((?:[^"\\]|\\.)*)"/g, (_, c) => "`" + c.replace(/\{([^}]+)\}/g, "${$1}") + "`");
@@ -568,7 +571,7 @@ function isPythonCode(code) {
 
 function extractInlineToken(code) {
   for (const line of code.split("\n")) {
-    const m = line.match(/(?:BOT_)?TOKEN\s*=\s*["']([^"']{10,})["']/);
+    const m = line.match(/(?:BOT_)?TOKEN\s*=\s*["'](\d{8,12}:[A-Za-z0-9_-]{30,})["']/);
     if (m && m[1] && !m[1].includes("YOUR_TOKEN") && !m[1].includes("...")) return m[1];
   }
   return null;
