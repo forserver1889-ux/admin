@@ -7,341 +7,81 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  
   :root {
-    --bg: #0e0e12;
-    --surface: #16161d;
-    --surface2: #1e1e28;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --accent: #7c6af7;
-    --accent2: #a78bfa;
-    --green: #34d399;
-    --red: #f87171;
-    --yellow: #fbbf24;
-    --text: #e4e4f0;
-    --text2: #8888aa;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Syne', sans-serif;
+    --bg: #0e0e12; --surface: #16161d; --surface2: #1e1e28;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+    --accent: #7c6af7; --accent2: #a78bfa;
+    --green: #34d399; --red: #f87171; --yellow: #fbbf24;
+    --text: #e4e4f0; --text2: #8888aa;
+    --mono: 'JetBrains Mono', monospace; --sans: 'Syne', sans-serif;
   }
+  body { background:var(--bg); color:var(--text); font-family:var(--sans); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+  .header { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; background:var(--surface); border-bottom:1px solid var(--border); flex-shrink:0; }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; letter-spacing:-0.3px; }
+  .logo-icon { width:28px;height:28px; background:linear-gradient(135deg,var(--accent),#c084fc); border-radius:8px; display:flex;align-items:center;justify-content:center; font-size:14px; }
+  .status-pill { display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-family:var(--mono);border:1px solid var(--border2);background:var(--surface2); }
+  .dot { width:7px;height:7px;border-radius:50%;background:var(--text2); }
+  .dot.running { background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 1.5s infinite; }
+  .dot.error { background:var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
 
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    height: 52px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+  .token-bar { display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--surface2);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap; }
+  .token-label { font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap; }
+  .token-input { flex:1;min-width:200px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:7px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color 0.2s; }
+  .token-input:focus { border-color:var(--accent); }
+  .token-input::placeholder { color:var(--text2); }
+  .token-input.has-token { border-color:rgba(52,211,153,0.45); }
+  .token-save-hint { font-size:11px;font-family:var(--mono);color:var(--green);opacity:0;transition:opacity 0.3s;white-space:nowrap; }
+  .token-save-hint.show { opacity:1; }
 
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 16px;
-    letter-spacing: -0.3px;
-  }
+  .btn { padding:7px 18px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;white-space:nowrap; }
+  .btn:active { transform:scale(0.97); }
+  .btn-start { background:var(--accent);color:white; }
+  .btn-start:hover { background:#6b58f0; }
+  .btn-stop { background:transparent;color:var(--red);border:1px solid rgba(248,113,113,0.3); }
+  .btn-stop:hover { background:rgba(248,113,113,0.1); }
+  .btn-clear { background:transparent;color:var(--text2);border:1px solid var(--border2);font-size:12px;padding:7px 12px; }
+  .btn-clear:hover { color:var(--text); }
+  .btn-save-token { background:transparent;color:var(--green);border:1px solid rgba(52,211,153,0.3);font-size:12px;padding:7px 12px; }
+  .btn-save-token:hover { background:rgba(52,211,153,0.08); }
 
-  .logo-icon {
-    width: 28px; height: 28px;
-    background: linear-gradient(135deg, var(--accent), #c084fc);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
-  }
+  .main { display:flex;flex:1;overflow:hidden; }
+  .editor-panel { display:flex;flex-direction:column;width:55%;border-right:1px solid var(--border); }
+  .panel-header { display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0; }
+  .panel-title { font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:1px; }
+  .tab { padding:3px 10px;border-radius:5px;font-size:11px;font-family:var(--mono);color:var(--accent2);background:var(--surface2);border:1px solid var(--border2); }
 
-  .status-pill {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-family: var(--mono);
-    border: 1px solid var(--border2);
-    background: var(--surface2);
-  }
+  #editor { flex:1;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.65;padding:16px;border:none;outline:none;resize:none;overflow-y:auto; }
 
-  .dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--text2);
-  }
-  .dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.5s infinite; }
-  .dot.error { background: var(--red); }
+  .examples-wrap { padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0; }
+  .examples-select { flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;cursor:pointer; }
 
-  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+  .log-panel { display:flex;flex-direction:column;flex:1; }
+  #log { flex:1;overflow-y:auto;padding:12px 16px;font-family:var(--mono);font-size:12px;line-height:1.7;background:var(--bg); }
+  .log-line { display:flex;gap:10px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.025); }
+  .log-time { color:var(--text2);flex-shrink:0;font-size:11px; }
+  .log-type { flex-shrink:0;font-size:11px;padding:1px 6px;border-radius:4px; }
+  .log-type.info { background:rgba(124,106,247,0.15);color:var(--accent2); }
+  .log-type.msg  { background:rgba(52,211,153,0.12);color:var(--green); }
+  .log-type.err  { background:rgba(248,113,113,0.12);color:var(--red); }
+  .log-type.sys  { background:rgba(251,191,36,0.1);color:var(--yellow); }
+  .log-msg { color:var(--text);word-break:break-all; }
 
-  .token-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    flex-wrap: wrap;
-  }
+  .info-bar { padding:12px 16px;background:var(--surface2);border-top:1px solid var(--border);flex-shrink:0; }
+  .info-title { font-size:10px;font-family:var(--mono);color:var(--yellow);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px; }
+  .info-step { font-size:11px;font-family:var(--mono);color:var(--text2);display:flex;gap:8px;margin-bottom:3px; }
+  .info-step span:first-child { color:var(--accent2); }
+  .info-note { margin-top:8px;padding:6px 10px;background:rgba(124,106,247,0.08);border:1px solid rgba(124,106,247,0.2);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--accent2); }
 
-  .token-label {
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    white-space: nowrap;
-  }
-
-  .token-input {
-    flex: 1;
-    min-width: 200px;
-    background: var(--bg);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 7px 14px;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .token-input:focus { border-color: var(--accent); }
-  .token-input::placeholder { color: var(--text2); }
-  .token-input.has-token { border-color: rgba(52,211,153,0.4); }
-
-  .token-save-hint {
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--green);
-    opacity: 0;
-    transition: opacity 0.3s;
-    white-space: nowrap;
-  }
-  .token-save-hint.show { opacity: 1; }
-
-  .btn {
-    padding: 7px 18px;
-    border-radius: 8px;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .btn:active { transform: scale(0.97); }
-
-  .btn-start { background: var(--accent); color: white; }
-  .btn-start:hover { background: #6b58f0; }
-
-  .btn-stop {
-    background: transparent;
-    color: var(--red);
-    border: 1px solid rgba(248,113,113,0.3);
-  }
-  .btn-stop:hover { background: rgba(248,113,113,0.1); }
-
-  .btn-clear {
-    background: transparent;
-    color: var(--text2);
-    border: 1px solid var(--border2);
-    font-size: 12px;
-    padding: 7px 12px;
-  }
-  .btn-clear:hover { color: var(--text); }
-
-  .btn-save-token {
-    background: transparent;
-    color: var(--green);
-    border: 1px solid rgba(52,211,153,0.3);
-    font-size: 12px;
-    padding: 7px 12px;
-  }
-  .btn-save-token:hover { background: rgba(52,211,153,0.08); }
-
-  .main {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-
-  .editor-panel {
-    display: flex;
-    flex-direction: column;
-    width: 55%;
-    border-right: 1px solid var(--border);
-  }
-
-  .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-
-  .panel-title {
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .tab {
-    padding: 3px 10px;
-    border-radius: 5px;
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--accent2);
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-  }
-
-  #editor {
-    flex: 1;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 13px;
-    line-height: 1.65;
-    padding: 16px;
-    border: none;
-    outline: none;
-    resize: none;
-    overflow-y: auto;
-  }
-
-  .examples-wrap {
-    padding: 8px 16px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-  }
-
-  .examples-select {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: 7px;
-    padding: 6px 10px;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 12px;
-    outline: none;
-    cursor: pointer;
-  }
-
-  .log-panel {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-
-  #log {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px;
-    font-family: var(--mono);
-    font-size: 12px;
-    line-height: 1.7;
-    background: var(--bg);
-  }
-
-  .log-line {
-    display: flex;
-    gap: 10px;
-    padding: 2px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.025);
-  }
-
-  .log-time { color: var(--text2); flex-shrink: 0; font-size: 11px; }
-  .log-type { flex-shrink: 0; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
-  .log-type.info  { background: rgba(124,106,247,0.15); color: var(--accent2); }
-  .log-type.msg   { background: rgba(52,211,153,0.12); color: var(--green); }
-  .log-type.err   { background: rgba(248,113,113,0.12); color: var(--red); }
-  .log-type.sys   { background: rgba(251,191,36,0.1); color: var(--yellow); }
-  .log-msg { color: var(--text); word-break: break-all; }
-
-  .setup-guide {
-    padding: 12px 16px;
-    background: var(--surface2);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-
-  .guide-title {
-    font-size: 10px;
-    font-family: var(--mono);
-    color: var(--yellow);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 6px;
-  }
-
-  .guide-step {
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--text2);
-    display: flex;
-    gap: 8px;
-    margin-bottom: 3px;
-  }
-  .guide-step span:first-child { color: var(--accent2); }
-
-  .proxy-note {
-    margin-top: 8px;
-    padding: 6px 10px;
-    background: rgba(124,106,247,0.08);
-    border: 1px solid rgba(124,106,247,0.2);
-    border-radius: 6px;
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--accent2);
-  }
-
-  /* Python mode banner */
-  .py-banner {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 16px;
-    background: rgba(251,191,36,0.08);
-    border-bottom: 1px solid rgba(251,191,36,0.2);
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--yellow);
-    flex-shrink: 0;
-  }
-  .py-banner.show { display: flex; }
+  .mode-banner { display:none;align-items:center;gap:8px;padding:5px 16px;background:rgba(124,106,247,0.08);border-bottom:1px solid rgba(124,106,247,0.2);font-size:11px;font-family:var(--mono);color:var(--accent2);flex-shrink:0; }
+  .mode-banner.show { display:flex; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="logo">
-    <div class="logo-icon">⚡</div>
-    BotRunner
-  </div>
+  <div class="logo"><div class="logo-icon">⚡</div>BotRunner</div>
   <div class="status-pill">
     <div class="dot" id="statusDot"></div>
     <span id="statusText">To'xtatilgan</span>
@@ -351,39 +91,35 @@
 <div class="token-bar">
   <span class="token-label">Token:</span>
   <input class="token-input" id="tokenInput" type="password" placeholder="123456789:ABCDEFGHIJKLMNabcdefghijklmn...">
-  <button class="btn btn-save-token" onclick="saveToken()" title="Tokenni saqlash">💾 Saqlash</button>
+  <button class="btn btn-save-token" onclick="saveToken()">💾 Saqlash</button>
   <span class="token-save-hint" id="tokenSaveHint">✓ Saqlandi</span>
   <button class="btn btn-start" id="btnStart" onclick="startBot()">▶ Ishga tushir</button>
-  <button class="btn btn-stop" id="btnStop" onclick="stopBot()" style="display:none">■ To'xtat</button>
+  <button class="btn btn-stop"  id="btnStop"  onclick="stopBot()" style="display:none">■ To'xtat</button>
 </div>
 
 <div class="main">
   <div class="editor-panel">
     <div class="panel-header">
-      <span class="panel-title">Bot kodi (JavaScript yoki Python)</span>
-      <span class="tab" id="editorTabLabel">bot.js</span>
+      <span class="panel-title">Bot kodi</span>
+      <span class="tab" id="editorTab">bot.js</span>
     </div>
-
-    <div class="py-banner" id="pyBanner">
-      ⚠ Python kodi aniqlandi — avtomatik JavaScript ga o'giriladi. Import qatorlari o'chiriladi.
+    <div class="mode-banner" id="modeBanner">
+      ⚡ Python kodi aniqlandi — handler funksiyalar avtomatik o'qiladi
     </div>
-
-    <textarea id="editor" spellcheck="false" placeholder="// Bot kodingizni shu yerga yozing...
-// Majburiy: handleUpdate(update) funksiyasi bo'lishi kerak
-// Tayyor namunalardan birini pastdan tanlang
-//
-// Kodda TOKEN = '...' yoki BOT_TOKEN = '...' yozilsa,
-// u avtomatik ishlatiladi — alohida kiritish shart emas."></textarea>
-
+    <textarea id="editor" spellcheck="false" placeholder="// JavaScript yoki Python bot kodingizni shu yerga yozing
+// JS uchun: handleUpdate(update) funksiyasi bo'lishi kerak
+// Python uchun: start, on_message, button_cb handler funksiyalar
+// Kodda TOKEN = '...' bo'lsa avtomatik ishlatiladi"></textarea>
     <div class="examples-wrap">
       <span class="panel-title">Namuna:</span>
       <select class="examples-select" onchange="loadExample(this.value)">
         <option value="">— Tayyor misol tanlang —</option>
-        <option value="echo">Echo bot (xabarni qaytaradi)</option>
-        <option value="commands">Buyruqlar bilan bot</option>
-        <option value="inline">Inline tugmalar</option>
-        <option value="weather">Ob-havo boti (API)</option>
-        <option value="python_echo">Python-style echo bot</option>
+        <option value="js_echo">JS: Echo bot</option>
+        <option value="js_commands">JS: Buyruqlar bilan</option>
+        <option value="js_inline">JS: Inline tugmalar</option>
+        <option value="py_echo">Python: Echo bot</option>
+        <option value="py_commands">Python: Buyruqlar bilan</option>
+        <option value="py_inline">Python: Inline tugmalar</option>
       </select>
     </div>
   </div>
@@ -397,390 +133,475 @@
       <div class="log-line">
         <span class="log-time">00:00:00</span>
         <span class="log-type sys">SYS</span>
-        <span class="log-msg">BotRunner tayyor. Token kiriting va botni ishga tushiring.</span>
+        <span class="log-msg">BotRunner tayyor. Token va kod kiriting, keyin ▶ bosing.</span>
       </div>
     </div>
-
-    <div class="setup-guide">
-      <div class="guide-title">⚠ Qanday ishlaydi</div>
-      <div class="guide-step"><span>1.</span><span>Token — @BotFather dan oling</span></div>
-      <div class="guide-step"><span>2.</span><span>Kod yozing yoki namuna tanlang</span></div>
-      <div class="guide-step"><span>3.</span><span>TOKEN = '...' kodda bo'lsa avtomatik ishlatiladi</span></div>
-      <div class="guide-step"><span>4.</span><span>▶ Ishga tushir tugmasini bosing</span></div>
-      <div class="guide-step"><span>5.</span><span>Sayt ochiq turganida bot ishlaydi</span></div>
-      <div class="proxy-note">ℹ Polling usuli ishlatiladi — server yoki webhook shart emas. Python import satrlari avtomatik o'tkazib yuboriladi.</div>
+    <div class="info-bar">
+      <div class="info-title">⚙ Qanday ishlaydi</div>
+      <div class="info-step"><span>1.</span><span>@BotFather dan token oling</span></div>
+      <div class="info-step"><span>2.</span><span>Kod yozing yoki namuna tanlang</span></div>
+      <div class="info-step"><span>3.</span><span>TOKEN = '...' kodda bo'lsa — avtomatik o'qiladi</span></div>
+      <div class="info-step"><span>4.</span><span>▶ Ishga tushir bosing</span></div>
+      <div class="info-note">ℹ JS va Python kodlari qo'llab-quvvatlanadi. Python import satrlari e'tiborga olinmaydi — faqat handler funksiyalar ishlatiladi.</div>
     </div>
   </div>
 </div>
 
 <script>
-// ─── EXAMPLES ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// EXAMPLES
+// ═══════════════════════════════════════════════════════════════════
 const EXAMPLES = {
-  echo: `// Echo bot — barcha xabarlarni qaytaradi
+js_echo: `// Echo bot — barcha xabarlarni qaytaradi
 async function handleUpdate(update) {
   const msg = update.message;
   if (!msg || !msg.text) return;
   await sendMessage(msg.chat.id, "Echo: " + msg.text);
 }`,
 
-  commands: `// Buyruqlar bilan bot
+js_commands: `// Buyruqlar bilan JS bot
 async function handleUpdate(update) {
   const msg = update.message;
   if (!msg || !msg.text) return;
-  const text = msg.text;
   const chatId = msg.chat.id;
-  const name = msg.from.first_name || "Do'st";
-
+  const name = (msg.from && msg.from.first_name) || "Do'st";
+  const text = msg.text;
   if (text === "/start") {
-    await sendMessage(chatId, \`Salom, \${name}! Men botman.\\n\\nBuyruqlar:\\n/yordam — yordam\\n/vaqt — hozirgi vaqt\`);
+    await sendMessage(chatId, "Salom, " + name + "!\\n/yordam — yordam\\n/vaqt — hozirgi vaqt");
   } else if (text === "/yordam") {
-    await sendMessage(chatId, "Yordam:\\n• /start — boshlash\\n• /vaqt — vaqtni ko'rish");
+    await sendMessage(chatId, "Buyruqlar:\\n• /start\\n• /vaqt");
   } else if (text === "/vaqt") {
-    await sendMessage(chatId, "Hozirgi vaqt: " + new Date().toLocaleString("uz-UZ"));
+    await sendMessage(chatId, "Vaqt: " + new Date().toLocaleString("uz-UZ"));
   } else {
     await sendMessage(chatId, "Noma'lum buyruq. /yordam ni ko'ring.");
   }
 }`,
 
-  inline: `// Inline tugmalar bilan bot
+js_inline: `// Inline tugmalar bilan JS bot
 async function handleUpdate(update) {
-  if (update.message) {
-    const msg = update.message;
-    if (msg.text === "/start") {
-      await sendMessageWithButtons(msg.chat.id, "Qaysi bo'limni tanlaysiz?", [
+  if (update.message && update.message.text === "/start") {
+    await tgAPI("sendMessage", {
+      chat_id: update.message.chat.id,
+      text: "Bo'limni tanlang:",
+      reply_markup: { inline_keyboard: [
         [{text: "📚 Savollar", callback_data: "savollar"}],
         [{text: "ℹ️ Haqida", callback_data: "haqida"}, {text: "📞 Aloqa", callback_data: "aloqa"}]
-      ]);
-    }
+      ]}
+    });
   }
   if (update.callback_query) {
     const cb = update.callback_query;
-    await answerCallback(cb.id);
-    if (cb.data === "savollar") {
-      await sendMessage(cb.message.chat.id, "Savollar bo'limi tez orada!");
-    } else if (cb.data === "haqida") {
-      await sendMessage(cb.message.chat.id, "Bu BotRunner yordamida yaratilgan bot.");
-    } else if (cb.data === "aloqa") {
-      await sendMessage(cb.message.chat.id, "Aloqa: @admin");
-    }
-  }
-}
-
-async function sendMessageWithButtons(chatId, text, keyboard) {
-  return tgAPI("sendMessage", {
-    chat_id: chatId, text,
-    reply_markup: {inline_keyboard: keyboard}
-  });
-}
-
-async function answerCallback(callbackQueryId) {
-  return tgAPI("answerCallbackQuery", {callback_query_id: callbackQueryId});
-}`,
-
-  weather: `// Ob-havo boti
-async function handleUpdate(update) {
-  const msg = update.message;
-  if (!msg || !msg.text) return;
-  const text = msg.text.trim();
-  const chatId = msg.chat.id;
-
-  if (text === "/start") {
-    await sendMessage(chatId, "Shahar nomini yuboring!\\nMasalan: Toshkent");
-    return;
-  }
-
-  await sendMessage(chatId, \`⏳ \${text} uchun ob-havo olinmoqda...\`);
-  try {
-    const res = await fetch(\`https://wttr.in/\${encodeURIComponent(text)}?format=j1\`);
-    const data = await res.json();
-    const cur = data.current_condition[0];
-    const reply = \`🌍 \${text}\\n\` +
-      \`🌡 Harorat: \${cur.temp_C}°C (his: \${cur.FeelsLikeC}°C)\\n\` +
-      \`💧 Namlik: \${cur.humidity}%\\n\` +
-      \`💨 Shamol: \${cur.windspeedKmph} km/h\\n\` +
-      \`📋 Holat: \${cur.weatherDesc[0].value}\`;
-    await sendMessage(chatId, reply);
-  } catch(e) {
-    await sendMessage(chatId, "Kechirasiz, xatolik yuz berdi. Shahar nomini tekshiring.");
+    await tgAPI("answerCallbackQuery", {callback_query_id: cb.id});
+    const replies = { savollar: "📚 Savollar tez orada!", haqida: "ℹ️ BotRunner orqali.", aloqa: "📞 @admin" };
+    if (replies[cb.data]) await sendMessage(cb.message.chat.id, replies[cb.data]);
   }
 }`,
 
-  python_echo: `# Python-style echo bot (avtomatik JS ga o'giriladi)
+py_echo: `# Python echo bot
 import logging
-import os
-import json
-import asyncio
-import urllib.parse
-import time
-from telegram import (
-    Update, InlineKeyboardButton, InlineKeyboardMarkup,
-    ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove,
-    WebAppInfo
-)
+from telegram import Update
+from telegram.ext import ApplicationBuilder, MessageHandler, filters
+
+TOKEN = "YOUR_TOKEN_HERE"
+
+async def on_message(update, context):
+    text = update.message.text
+    chat_id = update.message.chat.id
+    await context.bot.send_message(chat_id=chat_id, text="Echo: " + text)
+`,
+
+py_commands: `# Python buyruqlar bilan bot
+import logging
+from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
-TOKEN = "123456789:YOUR_BOT_TOKEN_HERE"
-BOT_TOKEN = TOKEN
+TOKEN = "YOUR_TOKEN_HERE"
 
-async def handleUpdate(update):
-    msg = update.get("message")
-    if not msg:
-        return
-    text = msg.get("text", "")
-    chat_id = msg["chat"]["id"]
-    if text == "/start":
-        await sendMessage(chat_id, "Salom! Men Python-style botman.")
-    else:
-        await sendMessage(chat_id, "Echo: " + text)
+async def start(update, context):
+    name = update.message.from_user.first_name or "Do'st"
+    await update.message.reply_text(f"Salom, {name}!\\n/yordam — yordam\\n/vaqt — vaqt")
+
+async def yordam(update, context):
+    await update.message.reply_text("Buyruqlar:\\n• /start\\n• /vaqt")
+
+async def vaqt_cmd(update, context):
+    import datetime
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    await update.message.reply_text(f"Hozirgi vaqt: {now}")
+
+async def on_message(update, context):
+    await update.message.reply_text("Noma'lum buyruq. /yordam ni ko'ring.")
+`,
+
+py_inline: `# Python inline tugmalar bilan bot
+import logging
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler
+
+TOKEN = "YOUR_TOKEN_HERE"
+
+async def start(update, context):
+    keyboard = [
+        [InlineKeyboardButton("📚 Savollar", callback_data="savollar")],
+        [InlineKeyboardButton("ℹ️ Haqida", callback_data="haqida"),
+         InlineKeyboardButton("📞 Aloqa",   callback_data="aloqa")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Bo'limni tanlang:", reply_markup=reply_markup)
+
+async def button_cb(update, context):
+    query = update.callback_query
+    await query.answer()
+    replies = {
+        "savollar": "📚 Savollar tez orada!",
+        "haqida":   "ℹ️ BotRunner orqali yaratilgan.",
+        "aloqa":    "📞 Aloqa: @admin"
+    }
+    text = replies.get(query.data, "Noma'lum tugma")
+    await query.message.reply_text(text)
 `
 };
 
-// ─── STATE ────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
 let isRunning = false;
 let pollingInterval = null;
 let lastUpdateId = 0;
 let token = "";
 let userHandleUpdate = async () => {};
+const TOKEN_KEY = "botrunner_token_v2";
 
-// ─── TOKEN PERSISTENCE ────────────────────────────────────────────────────────
-const TOKEN_KEY = "botrunner_token";
-
+// ═══════════════════════════════════════════════════════════════════
+// TOKEN STORAGE
+// ═══════════════════════════════════════════════════════════════════
 function loadSavedToken() {
   try {
     const saved = localStorage.getItem(TOKEN_KEY);
     if (saved) {
       document.getElementById("tokenInput").value = saved;
       document.getElementById("tokenInput").classList.add("has-token");
-      log("sys", "Saqlangan token yuklandi.");
     }
   } catch(e) {}
 }
 
 function saveToken() {
   const val = document.getElementById("tokenInput").value.trim();
-  if (!val) { log("err", "Token bo'sh — saqlanmadi."); return; }
+  if (!val) { addLog("err", "Token bo'sh!"); return; }
   try {
     localStorage.setItem(TOKEN_KEY, val);
     document.getElementById("tokenInput").classList.add("has-token");
     const hint = document.getElementById("tokenSaveHint");
     hint.classList.add("show");
     setTimeout(() => hint.classList.remove("show"), 2000);
-    log("sys", "Token saqlandi (localStorage).");
-  } catch(e) {
-    log("err", "Saqlashda xatolik: " + e.message);
-  }
+    addLog("sys", "Token saqlandi.");
+  } catch(e) { addLog("err", "Saqlashda xatolik: " + e.message); }
 }
 
-// Auto-save token on input change (debounced)
-let tokenSaveTimer = null;
-document.addEventListener("DOMContentLoaded", () => {
-  loadSavedToken();
-  document.getElementById("tokenInput").addEventListener("input", () => {
-    clearTimeout(tokenSaveTimer);
-    tokenSaveTimer = setTimeout(() => {
-      const val = document.getElementById("tokenInput").value.trim();
-      if (val.length > 10) {
-        try { localStorage.setItem(TOKEN_KEY, val); } catch(e) {}
-        document.getElementById("tokenInput").classList.toggle("has-token", !!val);
-      }
-    }, 800);
-  });
-
-  // Auto-detect token in code
-  document.getElementById("editor").addEventListener("input", detectPythonAndToken);
-});
-
-// ─── PYTHON CODE PREPROCESSOR ─────────────────────────────────────────────────
-/**
- * Strips Python imports and converts basic Python-style bot code to runnable JS.
- * Handles: import X, from X import Y, # comments, basic async def handleUpdate syntax.
- * Extracts TOKEN / BOT_TOKEN if defined in code.
- */
-function preprocessCode(raw) {
-  let lines = raw.split("\n");
-  let isPython = false;
-  let extractedToken = null;
-  let output = [];
-  let inMultilineImport = false;
-
-  // Detect Python by presence of import lines or def keyword
-  const pythonSignals = lines.some(l =>
-    /^\s*(import |from .+ import|def |async def |#)/.test(l.trim())
-  );
-  if (pythonSignals) isPython = true;
-
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
-    let trimmed = line.trim();
-
-    // Handle multi-line imports: from telegram import (...)
-    if (inMultilineImport) {
-      if (trimmed.endsWith(")") || trimmed.endsWith(",)")) {
-        inMultilineImport = false;
-      }
-      // skip line
-      continue;
-    }
-
-    // Skip Python import lines
-    if (/^import\s+\S/.test(trimmed) || /^from\s+\S+\s+import/.test(trimmed)) {
-      if (trimmed.includes("(") && !trimmed.includes(")")) {
-        inMultilineImport = true;
-      }
-      continue;
-    }
-
-    // Extract TOKEN / BOT_TOKEN from Python assignment
-    const tokenMatch = trimmed.match(/^(?:BOT_)?TOKEN\s*=\s*["']([^"']+)["']/);
-    if (tokenMatch) {
-      extractedToken = tokenMatch[1];
-      // Keep as JS const for reference (won't break anything)
-      output.push(line.replace(/^(\s*)(?:BOT_)?TOKEN\s*=\s*["']([^"']*)["']/, '$1var _EXTRACTED_TOKEN = "$2";'));
-      continue;
-    }
-
-    // Convert Python comments (#) to JS comments (//) — only lines that START with #
-    if (/^#/.test(trimmed)) {
-      output.push(line.replace(/^(\s*)#/, "$1//"));
-      continue;
-    }
-
-    // Convert Python async def handleUpdate(update): → async function handleUpdate(update) {
-    if (/^async\s+def\s+handleUpdate/.test(trimmed)) {
-      output.push(line.replace(/async\s+def\s+(\w+)\s*\(([^)]*)\)\s*:/, "async function $1($2) {"));
-      continue;
-    }
-
-    // Convert Python async def someFunc(args): → async function someFunc(args) {
-    if (/^async\s+def\s+/.test(trimmed)) {
-      output.push(line.replace(/async\s+def\s+(\w+)\s*\(([^)]*)\)\s*:/, "async function $1($2) {"));
-      continue;
-    }
-
-    // Convert Python def func(args): → function func(args) {
-    if (/^def\s+/.test(trimmed)) {
-      output.push(line.replace(/def\s+(\w+)\s*\(([^)]*)\)\s*:/, "function $1($2) {"));
-      continue;
-    }
-
-    // Convert Python if/elif/else/for/while blocks
-    if (/^(if|elif|else|for|while)\b/.test(trimmed)) {
-      // elif → else if
-      let converted = line
-        .replace(/\belif\b/, "} else if")
-        .replace(/\belse\s*:/, "} else {")
-        .replace(/^(\s*)(if\s*.+):$/, "$1$2 {")
-        .replace(/^(\s*)(for\s*.+):$/, "$1$2 {")
-        .replace(/^(\s*)(while\s*.+):$/, "$1$2 {")
-        .replace(/^(\s*)(} else if\s*.+):$/, "$1$2 {");
-      output.push(converted);
-      continue;
-    }
-
-    // Convert Python try/except/finally
-    if (/^try\s*:/.test(trimmed)) { output.push(line.replace(/try\s*:/, "try {")); continue; }
-    if (/^except\b/.test(trimmed)) {
-      output.push(line.replace(/except\s+(\w+)\s+as\s+(\w+)\s*:/, "} catch($2) {")
-                      .replace(/except\s*:/, "} catch(e) {")
-                      .replace(/except\s+(\w+)\s*:/, "} catch(e) {"));
-      continue;
-    }
-    if (/^finally\s*:/.test(trimmed)) { output.push(line.replace(/finally\s*:/, "finally {")); continue; }
-
-    // Convert Python return / await (these are same in JS, keep)
-    // Convert Python .get() dict access pattern: msg.get("text", "")
-    // (JS objects don't have .get but we can keep it and add a helper)
-
-    // Convert Python f-strings: f"...{var}..." → `...${var}...`
-    line = line.replace(/f"([^"]*)"/g, (_, content) => {
-      return '`' + content.replace(/\{([^}]+)\}/g, '${$1}') + '`';
-    });
-    line = line.replace(/f'([^']*)'/g, (_, content) => {
-      return '`' + content.replace(/\{([^}]+)\}/g, '${$1}') + '`';
-    });
-
-    // Convert Python print() → console.log() / log()
-    line = line.replace(/\bprint\s*\(/, "console.log(");
-
-    // Convert Python None/True/False → null/true/false
-    line = line.replace(/\bNone\b/g, "null");
-    line = line.replace(/\bTrue\b/g, "true");
-    line = line.replace(/\bFalse\b/g, "false");
-
-    // Convert Python not keyword
-    line = line.replace(/\bnot\s+/g, "!");
-
-    // Python dict/list .get() support is handled via helper below
-    output.push(line);
-  }
-
-  // If Python code detected, we need to close open function blocks
-  // Simple heuristic: add closing braces at end if Python
-  let jsCode = output.join("\n");
-
-  if (isPython) {
-    // Inject a small .get() polyfill at the top
-    const polyfill = `
-// Auto-injected Python compatibility helpers
-if (typeof Object.prototype.get !== "function") {
-  Object.defineProperty(Object.prototype, "get", {
-    value: function(key, def) {
-      return (this[key] !== undefined && this[key] !== null) ? this[key] : (def !== undefined ? def : null);
-    },
-    writable: true, configurable: true, enumerable: false
-  });
-}
-`;
-    jsCode = polyfill + "\n" + jsCode;
-
-    // Count opening { vs closing } and add missing ones
-    const opens = (jsCode.match(/\{/g) || []).length;
-    const closes = (jsCode.match(/\}/g) || []).length;
-    const diff = opens - closes;
-    if (diff > 0) {
-      jsCode += "\n" + "}\n".repeat(diff);
-    }
-  }
-
-  return { jsCode, extractedToken, isPython };
-}
-
-// ─── TOKEN AUTO-DETECT FROM CODE ──────────────────────────────────────────────
-function detectPythonAndToken() {
-  const code = document.getElementById("editor").value;
+// ═══════════════════════════════════════════════════════════════════
+// PYTHON CODE PARSER
+// Reads Python handler functions and builds a JS handleUpdate bridge.
+// ═══════════════════════════════════════════════════════════════════
+function parsePythonBot(code) {
   const lines = code.split("\n");
+  let extractedToken = null;
 
-  // Detect Python imports
-  const hasPythonImports = lines.some(l => /^\s*(import |from .+ import)/.test(l));
-  document.getElementById("pyBanner").classList.toggle("show", hasPythonImports);
-  document.getElementById("editorTabLabel").textContent = hasPythonImports ? "bot.py → js" : "bot.js";
-
-  // Extract inline token from code
+  // Extract TOKEN
   for (const line of lines) {
     const m = line.match(/(?:BOT_)?TOKEN\s*=\s*["']([^"']{10,})["']/);
-    if (m && m[1] && m[1] !== "YOUR_BOT_TOKEN_HERE" && !m[1].includes("...")) {
-      const currentInput = document.getElementById("tokenInput").value.trim();
-      if (!currentInput || currentInput !== m[1]) {
-        document.getElementById("tokenInput").value = m[1];
-        document.getElementById("tokenInput").classList.add("has-token");
-        try { localStorage.setItem(TOKEN_KEY, m[1]); } catch(e) {}
-        log("sys", "Koddan token aniqlandi va o'rnatildi.");
-      }
+    if (m && m[1] && !m[1].includes("YOUR_TOKEN") && !m[1].includes("...")) {
+      extractedToken = m[1];
       break;
     }
   }
+
+  // Extract indented function body
+  function extractFunctionBody(funcName) {
+    let inFunc = false;
+    let baseIndent = -1;
+    let bodyLines = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trimStart();
+      const indent = line.length - trimmed.length;
+      if (!inFunc) {
+        if (new RegExp(`^\\s*(?:async\\s+)?def\\s+${funcName}\\s*\\(`).test(line)) {
+          inFunc = true;
+          baseIndent = indent;
+          continue;
+        }
+      } else {
+        if (trimmed.length > 0 && indent <= baseIndent && !trimmed.startsWith("#")) break;
+        if (trimmed.startsWith("#")) continue;
+        bodyLines.push(line);
+      }
+    }
+    return bodyLines.join("\n");
+  }
+
+  // Discover all defined functions
+  const allFuncs = [];
+  for (const line of lines) {
+    const m = line.match(/^\s*(?:async\s+)?def\s+(\w+)\s*\(/);
+    if (m) allFuncs.push(m[1]);
+  }
+
+  // Detect registered handlers from add_handler calls
+  const commandHandlers = {};
+  let messageHandlerFunc = null;
+  let callbackHandlerFunc = null;
+
+  for (const line of lines) {
+    const cmdMatch = line.match(/CommandHandler\s*\(\s*["'](\w+)["']\s*,\s*(\w+)\s*\)/);
+    if (cmdMatch) commandHandlers[cmdMatch[1]] = cmdMatch[2];
+
+    const msgMatch = line.match(/MessageHandler\s*\([^,]+,\s*(\w+)\s*\)/);
+    if (msgMatch && !messageHandlerFunc) messageHandlerFunc = msgMatch[1];
+
+    const cbMatch = line.match(/CallbackQueryHandler\s*\(\s*(\w+)\s*[,)]/);
+    if (cbMatch && !callbackHandlerFunc) callbackHandlerFunc = cbMatch[1];
+  }
+
+  // Fallback heuristics for common naming patterns
+  if (!messageHandlerFunc) {
+    for (const fn of allFuncs) {
+      if (/^(on_message|receive_text|handle_message|text_handler)$/.test(fn)) {
+        messageHandlerFunc = fn; break;
+      }
+    }
+  }
+  if (!callbackHandlerFunc) {
+    for (const fn of allFuncs) {
+      if (/^(button_cb|on_callback|callback_handler|cb_handler|query_handler|inline_cb)$/.test(fn)) {
+        callbackHandlerFunc = fn; break;
+      }
+    }
+  }
+  if (!commandHandlers["start"] && allFuncs.includes("start")) {
+    commandHandlers["start"] = "start";
+  }
+
+  // Convert Python function body to executable JS
+  function py2js(body) {
+    const bodyLines = body.split("\n");
+    const result = [];
+    let inMultiImport = false;
+
+    for (let raw of bodyLines) {
+      const trimmed = raw.trim();
+
+      // Skip imports
+      if (/^\s*(import |from \S+ import)/.test(raw)) {
+        if (trimmed.includes("(") && !trimmed.includes(")")) inMultiImport = true;
+        continue;
+      }
+      if (inMultiImport) { if (trimmed.includes(")")) inMultiImport = false; continue; }
+
+      // Skip pass / Python-only boilerplate
+      if (trimmed === "pass") continue;
+      if (/^\s*(app\.|logger\.|logging\.|ApplicationBuilder|if\s+__name__)/.test(raw)) continue;
+      if (/app\.run_polling|app\.add_handler|app\.build|drop_pending|run_polling/.test(raw)) continue;
+
+      // Comments
+      if (/^\s*#/.test(raw)) { result.push(raw.replace(/^(\s*)#/, "$1//")); continue; }
+
+      // async def / def
+      raw = raw.replace(/\basync\s+def\s+(\w+)\s*\(([^)]*)\)\s*:/, "async function $1($2) {");
+      raw = raw.replace(/\bdef\s+(\w+)\s*\(([^)]*)\)\s*:/, "function $1($2) {");
+
+      // Control flow
+      raw = raw.replace(/\belif\b(.+?):$/, (_, c) => `} else if (${c.trim()}) {`);
+      raw = raw.replace(/\belse\s*:$/, "} else {");
+      raw = raw.replace(/^(\s*)if\b(.+?):$/, (_, sp, c) => `${sp}if (${c.trim()}) {`);
+      raw = raw.replace(/^(\s*)for\b(.+?):$/, (_, sp, c) => `${sp}for (${c.trim()}) {`);
+      raw = raw.replace(/^(\s*)while\b(.+?):$/, (_, sp, c) => `${sp}while (${c.trim()}) {`);
+      raw = raw.replace(/\btry\s*:$/, "try {");
+      raw = raw.replace(/\bexcept\s+(\w+)\s+as\s+(\w+)\s*:/, "} catch($2) {");
+      raw = raw.replace(/\bexcept\s+\w+\s*:/, "} catch(e) {");
+      raw = raw.replace(/\bexcept\s*:/, "} catch(e) {");
+      raw = raw.replace(/\bfinally\s*:/, "finally {");
+
+      // f-strings
+      raw = raw.replace(/f"((?:[^"\\]|\\.)*)"/g, (_, c) => "`" + c.replace(/\{([^}]+)\}/g, "${$1}") + "`");
+      raw = raw.replace(/f'((?:[^'\\]|\\.)*)'/g, (_, c) => "`" + c.replace(/\{([^}]+)\}/g, "${$1}") + "`");
+
+      // Python builtins / operators
+      raw = raw.replace(/\bNone\b/g,"null").replace(/\bTrue\b/g,"true").replace(/\bFalse\b/g,"false");
+      raw = raw.replace(/\bnot\s+/g,"!").replace(/\band\b/g,"&&").replace(/\bor\b/g,"||");
+      raw = raw.replace(/\bprint\s*\(/,"console.log(");
+
+      // Telegram Python API → JS bridge calls
+      raw = raw.replace(/\bupdate\.message\.reply_text\s*\(/g, "__reply(update, ");
+      raw = raw.replace(/\bupdate\.message\.reply_html\s*\(/g, "__reply(update, ");
+      raw = raw.replace(/\bupdate\.message\.reply_markdown\s*\(/g, "__reply(update, ");
+      raw = raw.replace(/\bquery\.message\.reply_text\s*\(/g, "__replyQuery(query, ");
+      raw = raw.replace(/\bquery\.edit_message_text\s*\(/g, "__editQuery(query, ");
+      raw = raw.replace(/\bquery\.answer\s*\(\s*\)/g, "__answerQuery(query)");
+      raw = raw.replace(/\bcontext\.bot\.send_message\s*\(\s*chat_id\s*=\s*([^,)]+)\s*,\s*text\s*=\s*([^)]+)\)/g,
+        "await sendMessage($1, $2)");
+      raw = raw.replace(/\bcontext\.bot\.send_message\s*\(/g, "__ctxSend(");
+
+      // Attribute name fixes
+      raw = raw.replace(/\.from_user\b/g, ".from");
+
+      // InlineKeyboardButton / InlineKeyboardMarkup
+      raw = raw.replace(/InlineKeyboardButton\s*\(\s*"([^"]+)"\s*,\s*callback_data\s*=\s*"([^"]+)"\s*\)/g,
+        '{text:"$1",callback_data:"$2"}');
+      raw = raw.replace(/InlineKeyboardButton\s*\(\s*'([^']+)'\s*,\s*callback_data\s*=\s*'([^']+)'\s*\)/g,
+        "{text:'$1',callback_data:'$2'}");
+      raw = raw.replace(/InlineKeyboardMarkup\s*\((\w+)\)/g, "{inline_keyboard:$1}");
+
+      // dict .get()
+      raw = raw.replace(/\.get\s*\(\s*"(\w+)"\s*,\s*"([^"]*)"\s*\)/g, '?.$1 ?? "$2"');
+      raw = raw.replace(/\.get\s*\(\s*"(\w+)"\s*,\s*'([^']*)'\s*\)/g, "?.$1 ?? '$2'");
+      raw = raw.replace(/\.get\s*\(\s*"(\w+)"\s*\)/g, '?.$1');
+      raw = raw.replace(/\.get\s*\(\s*'(\w+)'\s*\)/g, "?.$1");
+
+      // datetime
+      raw = raw.replace(/datetime\.datetime\.now\(\)\.strftime\([^)]+\)/g, "new Date().toLocaleString('uz-UZ')");
+      raw = raw.replace(/datetime\.now\(\)/g, "new Date()");
+
+      result.push(raw);
+    }
+
+    let js = result.join("\n");
+    // Balance braces
+    const opens  = (js.match(/\{/g) || []).length;
+    const closes = (js.match(/\}/g) || []).length;
+    if (opens > closes) js += "\n}\n".repeat(opens - closes);
+    return js;
+  }
+
+  // Collect all functions that need to be translated
+  const allNeeded = new Set([
+    ...Object.values(commandHandlers),
+    messageHandlerFunc,
+    callbackHandlerFunc
+  ].filter(Boolean));
+
+  const jsFuncs = {};
+  for (const fn of allNeeded) {
+    const body = extractFunctionBody(fn);
+    if (body.trim()) jsFuncs[fn] = py2js(body);
+  }
+
+  // Build the JS dispatcher code
+  const cmdLines = Object.entries(commandHandlers)
+    .map(([cmd, fn]) =>
+      `  if (cmd === "/${cmd}" && __handlers["${fn}"]) { await __handlers["${fn}"](update, {}); return; }`)
+    .join("\n");
+
+  const msgFnCall = messageHandlerFunc
+    ? `if (__handlers["${messageHandlerFunc}"]) await __handlers["${messageHandlerFunc}"](update, {});`
+    : `await sendMessage(update.message.chat.id, "Xabar qabul qilindi.");`;
+
+  const cbFnCall = callbackHandlerFunc
+    ? `const query = update.callback_query;
+    await tgAPI("answerCallbackQuery", {callback_query_id: query.id});
+    if (__handlers["${callbackHandlerFunc}"]) await __handlers["${callbackHandlerFunc}"](update, {});`
+    : `await tgAPI("answerCallbackQuery", {callback_query_id: update.callback_query.id});`;
+
+  const funcDefs = Object.entries(jsFuncs)
+    .map(([fn, body]) => `async function __fn_${fn}(update, context) {\n${body}\n}`)
+    .join("\n\n");
+
+  const handlersMap = Object.keys(jsFuncs)
+    .map(fn => `  "${fn}": __fn_${fn}`)
+    .join(",\n");
+
+  const dispatcher = `
+// ── Python bridge helpers ───────────────────────────────────────
+async function __reply(update, text, extra) {
+  const chatId = update && update.message && update.message.chat && update.message.chat.id;
+  if (chatId) await sendMessage(chatId, text, extra || {});
+}
+async function __replyQuery(query, text, extra) {
+  const chatId = query && query.message && query.message.chat && query.message.chat.id;
+  if (chatId) await sendMessage(chatId, text, extra || {});
+}
+async function __editQuery(query, text) {
+  await tgAPI("editMessageText", {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id,
+    text: text
+  });
+}
+async function __answerQuery(query) {
+  await tgAPI("answerCallbackQuery", {callback_query_id: query.id});
+}
+async function __ctxSend(chatId, text) {
+  await sendMessage(chatId, text);
 }
 
-// ─── EXAMPLES ─────────────────────────────────────────────────────────────────
+// ── Translated functions ────────────────────────────────────────
+${funcDefs}
+
+const __handlers = {
+${handlersMap}
+};
+
+// ── Main dispatcher ────────────────────────────────────────────
+async function handleUpdate(update) {
+  if (update.callback_query) {
+    ${cbFnCall}
+    return;
+  }
+  if (update.message) {
+    const text = (update.message.text || "").trim();
+    const cmd = text.split(" ")[0].split("@")[0];
+${cmdLines}
+    ${msgFnCall}
+    return;
+  }
+}
+`;
+
+  return { js: dispatcher, extractedToken, isPython: true };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DETECT CODE TYPE
+// ═══════════════════════════════════════════════════════════════════
+function isPythonCode(code) {
+  return /^\s*(import |from \S+ import|async\s+def |def )/m.test(code);
+}
+
+function extractInlineToken(code) {
+  for (const line of code.split("\n")) {
+    const m = line.match(/(?:BOT_)?TOKEN\s*=\s*["']([^"']{10,})["']/);
+    if (m && m[1] && !m[1].includes("YOUR_TOKEN") && !m[1].includes("...")) return m[1];
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════════
 function loadExample(key) {
   if (!key) return;
   document.getElementById("editor").value = EXAMPLES[key];
-  detectPythonAndToken();
-  log("sys", "Namuna yuklandi: " + key);
+  onEditorChange();
+  addLog("sys", "Namuna yuklandi: " + key);
 }
 
-// ─── LOGGING ──────────────────────────────────────────────────────────────────
-function log(type, msg) {
+function onEditorChange() {
+  const code = document.getElementById("editor").value;
+  const isPy = isPythonCode(code);
+  document.getElementById("modeBanner").classList.toggle("show", isPy);
+  document.getElementById("editorTab").textContent = isPy ? "bot.py" : "bot.js";
+  const tok = extractInlineToken(code);
+  if (tok) {
+    const inp = document.getElementById("tokenInput");
+    if (inp.value.trim() !== tok) {
+      inp.value = tok;
+      inp.classList.add("has-token");
+      try { localStorage.setItem(TOKEN_KEY, tok); } catch(e) {}
+      addLog("sys", "Koddan token aniqlandi.");
+    }
+  }
+}
+
+function addLog(type, msg) {
   const logEl = document.getElementById("log");
   const time = new Date().toTimeString().split(" ")[0];
   const line = document.createElement("div");
@@ -794,18 +615,18 @@ function esc(s) {
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-function clearLog() {
-  document.getElementById("log").innerHTML = "";
-}
+function clearLog() { document.getElementById("log").innerHTML = ""; }
 
 function setStatus(state) {
-  const dot = document.getElementById("statusDot");
+  const dot  = document.getElementById("statusDot");
   const text = document.getElementById("statusText");
-  dot.className = "dot" + (state === "running" ? " running" : state === "error" ? " error" : "");
-  text.textContent = state === "running" ? "Ishlayapti" : state === "error" ? "Xatolik" : "To'xtatilgan";
+  dot.className = "dot" + (state==="running"?" running":state==="error"?" error":"");
+  text.textContent = state==="running"?"Ishlayapti":state==="error"?"Xatolik":"To'xtatilgan";
 }
 
-// ─── TELEGRAM API ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// TELEGRAM API
+// ═══════════════════════════════════════════════════════════════════
 async function tgRequest(method, params = {}) {
   const resp = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
@@ -816,11 +637,12 @@ async function tgRequest(method, params = {}) {
 }
 
 async function sendMessage(chatId, text, extra = {}) {
-  const res = await tgRequest("sendMessage", {chat_id: chatId, text, ...extra});
-  if (res.ok) {
-    log("msg", "→ [" + chatId + "] " + String(text).substring(0, 80) + (String(text).length > 80 ? "..." : ""));
-  } else {
-    log("err", "sendMessage xatolik: " + (res.description || "?"));
+  if (!chatId || text === undefined || text === null) return;
+  const res = await tgRequest("sendMessage", {chat_id: chatId, text: String(text), ...extra});
+  if (res && res.ok) {
+    addLog("msg", "→ [" + chatId + "] " + String(text).substring(0, 80));
+  } else if (res) {
+    addLog("err", "sendMessage: " + (res.description || "xatolik"));
   }
   return res;
 }
@@ -829,7 +651,9 @@ async function tgAPI(method, params) {
   return tgRequest(method, params);
 }
 
-// ─── POLLING ──────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// POLLING
+// ═══════════════════════════════════════════════════════════════════
 async function poll() {
   try {
     const res = await tgRequest("getUpdates", {
@@ -837,104 +661,94 @@ async function poll() {
       timeout: 20,
       allowed_updates: ["message","callback_query","inline_query"]
     });
-    if (!res.ok) {
-      log("err", "API xatolik: " + (res.description || "Noma'lum"));
+    if (!res || !res.ok) {
+      addLog("err", "API xatolik: " + ((res && res.description) || "Noma'lum"));
       setStatus("error");
       return;
     }
     for (const update of res.result) {
       lastUpdateId = update.update_id;
-      const from = update.message?.from?.username
-        || update.message?.from?.first_name
-        || update.callback_query?.from?.username
-        || "?";
+      const from = update.message?.from?.username || update.message?.from?.first_name
+                || update.callback_query?.from?.username || "?";
       const msgText = update.message?.text || update.callback_query?.data || "(media)";
-      log("msg", "← [" + from + "] " + String(msgText).substring(0, 80));
-      try {
-        await userHandleUpdate(update);
-      } catch(e) {
-        log("err", "handleUpdate xatolik: " + e.message);
-      }
+      addLog("msg", "← [" + from + "] " + String(msgText).substring(0, 80));
+      try { await userHandleUpdate(update); }
+      catch(e) { addLog("err", "Handler xatolik: " + e.message); }
     }
   } catch(e) {
-    if (isRunning) {
-      log("err", "Ulanish xatoligi: " + e.message);
-    }
+    if (isRunning) addLog("err", "Ulanish xatoligi: " + e.message);
   }
 }
 
-// ─── START / STOP ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// START / STOP
+// ═══════════════════════════════════════════════════════════════════
 async function startBot() {
-  // Determine token: UI input takes priority, then localStorage
   token = document.getElementById("tokenInput").value.trim();
   if (!token) {
     try { token = localStorage.getItem(TOKEN_KEY) || ""; } catch(e) {}
   }
-  if (!token) {
-    log("err", "Token kiriting yoki kodda TOKEN = '...' qatorini yozing!");
-    return;
-  }
 
   const rawCode = document.getElementById("editor").value.trim();
-  if (!rawCode) { log("err", "Bot kodi bo'sh!"); return; }
-
-  // Preprocess (strip Python imports, extract inline token)
-  const { jsCode, extractedToken, isPython } = preprocessCode(rawCode);
-
-  // If token found in code and UI is empty, use it
-  if (extractedToken && !document.getElementById("tokenInput").value.trim()) {
-    token = extractedToken;
-    document.getElementById("tokenInput").value = extractedToken;
-    document.getElementById("tokenInput").classList.add("has-token");
-    try { localStorage.setItem(TOKEN_KEY, extractedToken); } catch(e) {}
-    log("sys", "Kod ichidan token olindi: " + extractedToken.substring(0, 12) + "...");
-  }
+  if (!rawCode) { addLog("err", "Kod bo'sh!"); return; }
 
   if (!token) {
-    log("err", "Token topilmadi! Token kiriting.");
-    return;
+    const t = extractInlineToken(rawCode);
+    if (t) { token = t; document.getElementById("tokenInput").value = t; }
+  }
+  if (!token) { addLog("err", "Token kiriting!"); return; }
+
+  let finalJS;
+  if (isPythonCode(rawCode)) {
+    addLog("sys", "Python kodi tahlil qilinmoqda...");
+    try {
+      const result = parsePythonBot(rawCode);
+      finalJS = result.js;
+      if (result.extractedToken) {
+        token = result.extractedToken;
+        document.getElementById("tokenInput").value = token;
+        document.getElementById("tokenInput").classList.add("has-token");
+        try { localStorage.setItem(TOKEN_KEY, token); } catch(e) {}
+      }
+      addLog("sys", "Python kodi muvaffaqiyatli tahlil qilindi.");
+    } catch(e) {
+      addLog("err", "Python tahlil xatoligi: " + e.message);
+      return;
+    }
+  } else {
+    finalJS = rawCode;
   }
 
-  if (isPython) {
-    log("sys", "Python kodi aniqlandi — JavaScript ga o'girilmoqda...");
-  }
-
-  // Compile the code
   try {
-    // Wrap in IIFE to avoid global pollution, expose handleUpdate
-    const wrappedCode = jsCode + "\nreturn typeof handleUpdate !== 'undefined' ? handleUpdate : null;";
-    const fn = new Function("sendMessage", "tgAPI", "log", wrappedCode);
-    const handler = fn(sendMessage, tgAPI, log);
+    const wrapped = finalJS + "\nreturn typeof handleUpdate !== 'undefined' ? handleUpdate : null;";
+    const fn = new Function("sendMessage", "tgAPI", "addLog", wrapped);
+    const handler = fn(sendMessage, tgAPI, addLog);
     if (typeof handler !== "function") {
-      log("err", "Kodda handleUpdate(update) funksiyasi topilmadi!");
-      if (isPython) log("err", "Python kodda: async def handleUpdate(update): bo'lishi kerak");
+      addLog("err", "handleUpdate funksiyasi topilmadi!");
       return;
     }
     userHandleUpdate = handler;
   } catch(e) {
-    log("err", "Kod xatoligi: " + e.message);
-    if (isPython) {
-      log("err", "Python → JS o'tkazishda muammo bo'lishi mumkin. Sintaksisni tekshiring.");
-    }
+    addLog("err", "Kod xatoligi: " + e.message);
     return;
   }
 
-  log("sys", "Token tekshirilmoqda...");
+  addLog("sys", "Token tekshirilmoqda...");
   const me = await tgRequest("getMe", {});
-  if (!me.ok) {
-    log("err", "Token noto'g'ri: " + (me.description || "Xatolik"));
+  if (!me || !me.ok) {
+    addLog("err", "Token noto'g'ri: " + ((me && me.description) || "Xatolik"));
     setStatus("error");
     return;
   }
 
-  log("info", "Bot ulandi: @" + me.result.username + " (" + me.result.first_name + ")");
-  log("sys", "Polling boshlandi. Xabarlar kutilmoqda...");
+  addLog("info", "Bot ulandi: @" + me.result.username + " (" + me.result.first_name + ")");
+  addLog("sys", "Polling boshlandi...");
 
   isRunning = true;
   lastUpdateId = 0;
   setStatus("running");
   document.getElementById("btnStart").style.display = "none";
-  document.getElementById("btnStop").style.display = "";
+  document.getElementById("btnStop").style.display  = "";
 
   poll();
   pollingInterval = setInterval(() => { if (isRunning) poll(); }, 1500);
@@ -946,9 +760,26 @@ function stopBot() {
   pollingInterval = null;
   setStatus("stopped");
   document.getElementById("btnStart").style.display = "";
-  document.getElementById("btnStop").style.display = "none";
-  log("sys", "Bot to'xtatildi.");
+  document.getElementById("btnStop").style.display  = "none";
+  addLog("sys", "Bot to'xtatildi.");
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+document.addEventListener("DOMContentLoaded", () => {
+  loadSavedToken();
+  let debounce;
+  document.getElementById("editor").addEventListener("input", () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(onEditorChange, 400);
+  });
+  document.getElementById("tokenInput").addEventListener("input", () => {
+    const v = document.getElementById("tokenInput").value.trim();
+    document.getElementById("tokenInput").classList.toggle("has-token", v.length > 10);
+    if (v.length > 10) try { localStorage.setItem(TOKEN_KEY, v); } catch(e) {}
+  });
+});
 </script>
 </body>
 </html>
